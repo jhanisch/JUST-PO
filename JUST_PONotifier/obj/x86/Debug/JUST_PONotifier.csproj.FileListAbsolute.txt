@@ -7,3 +7,13 @@
 /Users/f1nut/Projects/JUST_PONotifier/JUST_PONotifier/obj/x86/Debug/JUST_PONotifier.csproj.CoreCompileInputs.cache
 /Users/f1nut/Projects/JUST_PONotifier/JUST_PONotifier/obj/x86/Debug/JUST_PONotifier.exe
 /Users/f1nut/Projects/JUST_PONotifier/JUST_PONotifier/obj/x86/Debug/JUST_PONotifier.pdb
+/Users/f1nut/Projects/JUST/PONotifier/JUST_PONotifier/obj/x86/Debug/JUST_PONotifier.csprojResolveAssemblyReference.cache
+/Users/f1nut/Projects/JUST/PONotifier/JUST_PONotifier/obj/x86/Debug/JUST_PONotifier.csproj.CoreCompileInputs.cache
+/Users/f1nut/Projects/JUST/PONotifier/JUST_PONotifier/obj/x86/Debug/JUST_PONotifier.exe
+/Users/f1nut/Projects/JUST/PONotifier/JUST_PONotifier/obj/x86/Debug/JUST_PONotifier.pdb
+/Users/f1nut/Projects/JUST/PONotifier/JUST_PONotifier/bin/Debug/log4net.config
+/Users/f1nut/Projects/JUST/PONotifier/JUST_PONotifier/bin/Debug/JUST_PONotifier.exe.config
+/Users/f1nut/Projects/JUST/PONotifier/JUST_PONotifier/bin/Debug/JUST_PONotifier.exe
+/Users/f1nut/Projects/JUST/PONotifier/JUST_PONotifier/bin/Debug/JUST_PONotifier.pdb
+/Users/f1nut/Projects/JUST/PONotifier/JUST_PONotifier/bin/Debug/log4net.dll
+/Users/f1nut/Projects/JUST/PONotifier/JUST_PONotifier/bin/Debug/log4net.xml

@@ -60,3 +60,15 @@
 2017-12-31 21:51:15,514 [1] INFO JUST_PONotifier.MainClass - Completion at 12/31/2017 9:51:15 PM
 2017-12-31 21:54:33,547 [1] INFO JUST_PONotifier.MainClass - starting up at 12/31/2017 9:54:33 PM
 2017-12-31 21:55:11,009 [1] INFO JUST_PONotifier.MainClass - Completion at 12/31/2017 9:55:11 PM
+2018-01-01 00:46:18,736 [1] INFO JUST_PONotifier.MainClass - Starting up at 1/1/2018 12:46:18 AM
+2018-01-01 00:46:26,296 [1] INFO JUST_PONotifier.MainClass - Completion at 1/1/2018 12:46:26 AM
+2018-01-01 00:46:46,633 [1] INFO JUST_PONotifier.MainClass - Starting up at 1/1/2018 12:46:46 AM
+2018-01-01 00:47:01,505 [1] INFO JUST_PONotifier.MainClass - Completion at 1/1/2018 12:47:01 AM
+2018-01-01 00:47:10,438 [1] INFO JUST_PONotifier.MainClass - Starting up at 1/1/2018 12:47:10 AM
+2018-01-01 00:49:24,965 [1] INFO JUST_PONotifier.MainClass - Completion at 1/1/2018 12:49:24 AM
+2018-01-01 11:02:56,458 [1] INFO JUST_PONotifier.MainClass - Starting up at 1/1/2018 11:02:56 AM
+2018-01-01 11:03:21,394 [1] INFO JUST_PONotifier.MainClass - Starting up at 1/1/2018 11:03:21 AM
+2018-01-01 11:05:35,974 [1] INFO JUST_PONotifier.MainClass - Starting up at 1/1/2018 11:05:35 AM
+2018-01-01 11:15:38,344 [1] INFO JUST_PONotifier.MainClass - Starting up at 1/1/2018 11:15:38 AM
+2018-01-01 11:22:16,414 [1] INFO JUST_PONotifier.MainClass - Starting up at 1/1/2018 11:22:16 AM
+2018-01-01 11:22:43,217 [1] ERROR JUST_PONotifier.MainClass - Error: monitorss is not a valid Mode.  Valid modes are 'debug', 'live' and 'monitor'

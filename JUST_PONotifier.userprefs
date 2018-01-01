@@ -1,7 +1,7 @@
 ﻿<Properties StartupConfiguration="{C52D3A85-7C0A-4020-BF05-4D7AF272D026}|Default">
   <MonoDevelop.Ide.Workbench ActiveDocument="JUST_PONotifier/Program.cs">
     <Files>
-      <File FileName="JUST_PONotifier/Program.cs" Line="86" Column="36" />
+      <File FileName="JUST_PONotifier/Program.cs" Line="38" Column="1" />
       <File FileName="JUST_PONotifier/app.config" Line="10" Column="165" />
     </Files>
   </MonoDevelop.Ide.Workbench>

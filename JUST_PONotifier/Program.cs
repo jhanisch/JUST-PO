@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections;
 using System.Configuration;
+using System.Data;
 using System.Data.SqlClient;
 using System.Net;
 using System.Net.Mail;
@@ -16,7 +18,7 @@ namespace JUST_PONotifier
         private static string FromEmailSMPT;
         private static int FromEmailPort;
 
-        private static string MessageBodyFormat = "<h1>PO {0} Received</h1><br><h2>Purchase Order {0} has been received and has been placed in bin {1}</h2>";
+        private static string MessageBodyFormat = "<h1>Purchase Order {0} Received</h1><br><h2>Purchase Order {0} has been received and has been placed in bin {1}</h2>";
 
         static void Main(string[] args)
         {
@@ -49,6 +51,8 @@ namespace JUST_PONotifier
         {
             string queryString =
                 "SELECT po_num, descr FROM dbo.po where RCVD_DATE is not null and NOTIFIED is null;";
+            ArrayList notified = new ArrayList();
+
             using (SqlConnection connection = new SqlConnection(
                 DBConnectionString))
             {
@@ -61,10 +65,11 @@ namespace JUST_PONotifier
                 {
                     while (reader.Read())
                     {
+                        var subject = String.Format("PO {0} Received", reader[0]);
                         var message = String.Format(MessageBodyFormat, reader[0], reader[1]);
-                        sendEmail("f1nut@aol.com", message);
+                        sendEmail("f1nut@aol.com", subject, message);
 
-                        //Mark PO Record as notified
+                        notified.Add(reader[0].ToString());
                     }
                 }
                 finally
@@ -72,21 +77,34 @@ namespace JUST_PONotifier
                     // Always call Close when done reading.
                     reader.Close();
                 }
+
+                foreach(var poNum in notified) {
+                    try
+                    {
+                        SqlCommand update = new SqlCommand("UPDATE dbo.po SET notified='Y' WHERE po_num=@PoNum", connection);
+                        update.Parameters.Add("@PoNum", SqlDbType.Int, 4).Value = poNum;
+                        update.ExecuteNonQuery();
+                    }
+                    catch (Exception x)
+                    {
+                        log.Error(x.Message);
+                    }
+                }
             }
         }
 
-        private static void sendEmail(string toEmailAddress, string message) {
+        private static void sendEmail(string toEmailAddress, string subject, string message) {
             try
             {
                 using (MailMessage mail = new MailMessage())
                 {
                     mail.From = new MailAddress(FromEmailAddress);
                     mail.To.Add(toEmailAddress);
-                    mail.Subject = "PO Received";
+                    mail.Subject = subject;
                     mail.Body = message;
                     mail.IsBodyHtml = true;
 
-                    using (SmtpClient smtp = new SmtpClient("smtp.gmail.com", 587))
+                    using (SmtpClient smtp = new SmtpClient(FromEmailSMPT, FromEmailPort))
                     {
                         smtp.Credentials = new NetworkCredential(FromEmailAddress, FromEmailPassword);
                         smtp.EnableSsl = true;
@@ -97,6 +115,10 @@ namespace JUST_PONotifier
             catch (Exception x) {
                 log.Error(x.Message);
             }
+        }
+
+        private void markPurchaseOrderAsNotified(string poNum) {
+            
         }
     }
 }

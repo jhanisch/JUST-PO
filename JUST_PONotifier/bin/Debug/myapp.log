@@ -38,3 +38,25 @@
 2017-12-31 20:33:44,028 [1] INFO JUST_PONotifier.MainClass - starting up at 12/31/2017 8:33:43 PM
 2017-12-31 20:45:51,213 [1] INFO JUST_PONotifier.MainClass - starting up at 12/31/2017 8:45:51 PM
 2017-12-31 20:46:47,492 [1] INFO JUST_PONotifier.MainClass - Completion at 12/31/2017 8:46:47 PM
+2017-12-31 20:50:53,842 [1] INFO JUST_PONotifier.MainClass - starting up at 12/31/2017 8:50:53 PM
+2017-12-31 20:51:27,059 [1] ERROR JUST_PONotifier.MainClass - Message could not be sent.
+2017-12-31 20:51:27,061 [1] ERROR JUST_PONotifier.MainClass - Message could not be sent.
+2017-12-31 20:52:21,019 [1] INFO JUST_PONotifier.MainClass - starting up at 12/31/2017 8:52:20 PM
+2017-12-31 20:52:47,839 [1] INFO JUST_PONotifier.MainClass - Completion at 12/31/2017 8:52:47 PM
+2017-12-31 20:59:10,719 [1] INFO JUST_PONotifier.MainClass - starting up at 12/31/2017 8:59:10 PM
+2017-12-31 21:17:08,073 [1] INFO JUST_PONotifier.MainClass - starting up at 12/31/2017 9:17:08 PM
+2017-12-31 21:18:09,835 [1] ERROR JUST_PONotifier.MainClass - Error: There is already an open DataReader associated with this Connection which must be closed first.
+2017-12-31 21:22:15,124 [1] INFO JUST_PONotifier.MainClass - starting up at 12/31/2017 9:22:15 PM
+2017-12-31 21:29:36,565 [1] ERROR JUST_PONotifier.MainClass - There is already an open DataReader associated with this Connection which must be closed first.
+2017-12-31 21:34:06,004 [1] INFO JUST_PONotifier.MainClass - starting up at 12/31/2017 9:34:05 PM
+2017-12-31 21:37:37,603 [1] ERROR JUST_PONotifier.MainClass - There is already an open DataReader associated with this Connection which must be closed first.
+2017-12-31 21:37:37,603 [1] ERROR JUST_PONotifier.MainClass - There is already an open DataReader associated with this Connection which must be closed first.
+2017-12-31 21:46:07,452 [1] INFO JUST_PONotifier.MainClass - starting up at 12/31/2017 9:46:07 PM
+2017-12-31 21:47:19,596 [1] ERROR JUST_PONotifier.MainClass - The variable name '@PoNum' has already been declared. Variable names must be unique within a query batch or stored procedure.
+2017-12-31 21:47:25,998 [1] INFO JUST_PONotifier.MainClass - Completion at 12/31/2017 9:47:25 PM
+2017-12-31 21:48:17,391 [1] INFO JUST_PONotifier.MainClass - starting up at 12/31/2017 9:48:17 PM
+2017-12-31 21:49:45,339 [1] INFO JUST_PONotifier.MainClass - starting up at 12/31/2017 9:49:45 PM
+2017-12-31 21:51:15,511 [1] ERROR JUST_PONotifier.MainClass - The variable name '@PoNum' has already been declared. Variable names must be unique within a query batch or stored procedure.
+2017-12-31 21:51:15,514 [1] INFO JUST_PONotifier.MainClass - Completion at 12/31/2017 9:51:15 PM
+2017-12-31 21:54:33,547 [1] INFO JUST_PONotifier.MainClass - starting up at 12/31/2017 9:54:33 PM
+2017-12-31 21:55:11,009 [1] INFO JUST_PONotifier.MainClass - Completion at 12/31/2017 9:55:11 PM

@@ -151,7 +151,7 @@ namespace JUST_PONotifier
                     reader.Close();
                 }
 
-/*                foreach(var poNum in notified) {
+                foreach(var poNum in notified) {
                     try
                     {
                         SqlCommand update = new SqlCommand("update dbo.po SET notified='Y' WHERE po_num=@PoNum", connection);
@@ -163,7 +163,6 @@ namespace JUST_PONotifier
                         log.Error(String.Format("Error updating PO as Notified: {0}", x.Message);
                     }
                 }
-                */
             }
         }
 

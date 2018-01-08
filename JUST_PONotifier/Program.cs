@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Configuration;
-//using System.Data;
+using System.Data;
 using System.Data.SqlClient;
 using System.Net;
 using System.Net.Mail;
@@ -136,7 +136,7 @@ namespace JUST_PONotifier
                         {
                             if (sendEmail(MonitorEmailAddress, subject, message))
                             {
-                                if (!notified.Contains(reader[0]))
+                                if (!notified.Contains(reader[0].ToString()))
                                 {
                                     notified.Add(reader[0].ToString());
                                 }
@@ -160,7 +160,7 @@ namespace JUST_PONotifier
                     }
                     catch (Exception x)
                     {
-                        log.Error(String.Format("Error updating PO as Notified: {0}", x.Message);
+                        log.Error(String.Format("Error updating PO as Notified: {0}", x.Message));
                     }
                 }
             }
@@ -173,7 +173,7 @@ namespace JUST_PONotifier
             {
                 using (MailMessage mail = new MailMessage())
                 {
-                    mail.From = new MailAddress(FromEmailAddress);
+                    mail.From = new MailAddress(FromEmailAddress, "PO Notification");
                     mail.To.Add(toEmailAddress);
                     mail.Subject = subject;
                     mail.Body = emailBody;

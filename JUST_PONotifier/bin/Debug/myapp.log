@@ -76,3 +76,15 @@
 2018-01-06 12:11:48,658 [1] INFO JUST_PONotifier.MainClass - Starting up at 1/6/2018 12:11:48 PM
 2018-01-06 12:52:47,054 [1] INFO JUST_PONotifier.MainClass - Starting up at 1/6/2018 12:52:47 PM
 2018-01-06 12:55:55,710 [1] INFO JUST_PONotifier.MainClass - Starting up at 1/6/2018 12:55:55 PM
+2018-01-08 18:27:55,863 [1] INFO JUST_PONotifier.MainClass - Starting up at 1/8/2018 6:27:55 PM
+2018-01-08 18:30:59,933 [1] ERROR JUST_PONotifier.MainClass - Error: Login failed for user 'MARK'.
+2018-01-08 18:31:15,375 [1] INFO JUST_PONotifier.MainClass - Starting up at 1/8/2018 6:31:15 PM
+2018-01-08 18:41:09,618 [1] INFO JUST_PONotifier.MainClass - Starting up at 1/8/2018 6:41:09 PM
+2018-01-08 18:41:47,778 [1] INFO JUST_PONotifier.MainClass - Starting up at 1/8/2018 6:41:47 PM
+2018-01-08 18:43:36,590 [1] INFO JUST_PONotifier.MainClass - Starting up at 1/8/2018 6:43:36 PM
+2018-01-08 18:45:56,039 [1] INFO JUST_PONotifier.MainClass - Starting up at 1/8/2018 6:45:56 PM
+2018-01-08 18:46:55,032 [1] INFO JUST_PONotifier.MainClass - Starting up at 1/8/2018 6:46:55 PM
+2018-01-08 18:48:14,556 [1] INFO JUST_PONotifier.MainClass - Starting up at 1/8/2018 6:48:14 PM
+2018-01-08 18:50:00,959 [1] INFO JUST_PONotifier.MainClass - Starting up at 1/8/2018 6:50:00 PM
+2018-01-08 18:50:20,680 [1] INFO JUST_PONotifier.MainClass - Starting up at 1/8/2018 6:50:20 PM
+2018-01-30 20:10:48,479 [1] INFO JUST_PONotifier.MainClass - Starting up at 1/30/2018 8:10:48 PM

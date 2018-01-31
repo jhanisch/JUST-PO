@@ -1,14 +1,16 @@
 ﻿<Properties StartupConfiguration="{C52D3A85-7C0A-4020-BF05-4D7AF272D026}|Default">
-  <MonoDevelop.Ide.Workbench ActiveDocument="JUST_PONotifier/app.config">
+  <MonoDevelop.Ide.Workbench ActiveDocument="JUST_PONotifier/Program.cs">
     <Files>
-      <File FileName="JUST_PONotifier/Program.cs" Line="129" Column="1" />
-      <File FileName="JUST_PONotifier/app.config" Line="9" Column="9" />
+      <File FileName="JUST_PONotifier/Program.cs" Line="125" Column="14" />
+      <File FileName="JUST_PONotifier/app.config" Line="27" Column="133" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug|x86" />
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
     <BreakpointStore>
-      <Breakpoint file="/Users/f1nut/Projects/JUST/PONotifier/JUST_PONotifier/Program.cs" relfile="JUST_PONotifier/Program.cs" line="35" column="1" />
+      <Breakpoint file="/Users/f1nut/Projects/JUST/PONotifier/JUST_PONotifier/Program.cs" relfile="JUST_PONotifier/Program.cs" line="115" column="1" />
+      <Breakpoint file="/Users/f1nut/Projects/JUST/PONotifier/JUST_PONotifier/Program.cs" relfile="JUST_PONotifier/Program.cs" line="36" column="1" />
+      <Breakpoint file="/Users/f1nut/Projects/JUST/PONotifier/JUST_PONotifier/Program.cs" relfile="JUST_PONotifier/Program.cs" line="124" column="1" />
     </BreakpointStore>
   </MonoDevelop.Ide.DebuggingService.Breakpoints>
   <MonoDevelop.Ide.DebuggingService.PinnedWatches />

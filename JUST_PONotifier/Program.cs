@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Configuration;
 using System.Data;
+using System.Data.Odbc;
 using System.Data.SqlClient;
 using System.Net;
 using System.Net.Mail;
@@ -46,7 +47,7 @@ namespace JUST_PONotifier
 
         private static void getConfiguration()
         {
-            DBConnectionString = ConfigurationManager.ConnectionStrings["JUST"].ConnectionString;
+            DBConnectionString = ConfigurationManager.ConnectionStrings["JUSTodbc"].ConnectionString;
             FromEmailAddress = ConfigurationManager.AppSettings["FromEmailAddress"];
             FromEmailPassword = ConfigurationManager.AppSettings["FromEmailPassword"];
             FromEmailSMTP = ConfigurationManager.AppSettings["FromEmailSMTP"];
@@ -105,6 +106,25 @@ namespace JUST_PONotifier
 
         private static void ProcessPOData()
         {
+            try
+            {
+                OdbcConnection cn;
+                OdbcCommand cmd;
+                string MyString;
+
+                MyString = "Select * from Customers";
+
+                cn = new OdbcConnection(DBConnectionString);
+                cmd = new OdbcCommand(MyString, cn);
+                cn.Open();
+
+                cn.Close();
+            }
+            catch (Exception x) {
+                log.Error(x.Message);
+            }
+
+
             string queryString =
                 "SELECT po_num, descr FROM dbo.po where RCVD_DATE is not null and NOTIFIED is null;";
             ArrayList notified = new ArrayList();

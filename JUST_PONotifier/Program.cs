@@ -28,7 +28,7 @@ namespace JUST_PONotifier
         private static String MonitorEmailAddress;
         private static ArrayList ValidModes = new ArrayList() { debug, live, monitor };
 
-        private static string MessageBodyFormat = "<h2>Purchase Order {0} Received</h2><br><h3>Purchase Order {0} has been received and has been placed in bin {1}</h3>";
+        private static string MessageBodyFormat = "<h2>Purchase Order {0} Received</h2><br><h3>Purchase Order {0} has been received by {1} and has been placed in bin {2}</h3>";
 
         static void Main(string[] args)
         {
@@ -125,11 +125,16 @@ namespace JUST_PONotifier
                 OdbcConnection cn;
                 OdbcCommand cmd;
                 string MyString;
+                var notifiedlist = new ArrayList();
 
-//                MyString = "Select icpo.buyer, icpo.ponum, user.username from icpo, user where icpo.ponum = '87000' and icpo.buyer = user.usernum order by icpo.ponum asc";
-
-                MyString = "Select icpo.buyer, icpo.ponum from icpo where icpo.ponum = '87000' order by icpo.ponum asc";
+                //                MyString = "Select icpo.buyer, icpo.ponum, user.username from icpo, user where icpo.ponum = '87000' and icpo.buyer = user.usernum order by icpo.ponum asc";
+                MyString = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3, icpo.user_4, icpo.user_5 from icpo where icpo.ponum = '87000' and icpo.user_5 = 0 order by icpo.ponum asc";
                 // "user = premployee"
+                // user_1 = receiving rack location
+                // user_2 = Receiver
+                // user_3 = Received Date
+                // user_4 = Bin Cleared Date
+                // user_5 = Notified
 
                 log.Info("SQL: " + MyString);
 
@@ -144,29 +149,84 @@ namespace JUST_PONotifier
                 cn.Open();
                 log.Info("connection opened successfully");
 
-
                 OdbcDataReader reader = cmd.ExecuteReader();
                 try
                 {
+                    var buyerColumn = reader.GetOrdinal("buyer");
+                    var poNumColumn = reader.GetOrdinal("ponum");
+                    log.Info("buyer column: " + buyerColumn);
+
                     while (reader.Read())
                     {
                         var line = new StringBuilder();
-                        line.Append(reader.GetString(0));
+                        line.Append(reader.GetString(buyerColumn));
                         line.Append(", ");
-                        line.Append(reader.GetString(1));
-
+                        line.Append(reader.GetString(poNumColumn));
+                        line.Append(", user_1: ");
+                        var user_1 = reader.GetValue(2);
+                        var user_2 = reader.GetValue(3);
+                        var user_3 = reader.GetValue(4);
+                        var user_4 = reader.GetValue(5);
+                        var user_5 = reader.GetValue(6);
+                        line.Append(user_1);
+                        line.Append(", user_2: ");
+                        line.Append(user_2);
+                        line.Append(", user_3: ");
+                        line.Append(user_3);
+                        line.Append(", user_4: ");
+                        line.Append(user_4);
+                        line.Append(", user_5: ");
+                        line.Append(user_5);
                         log.Info(line);
 
-
-                        var subject = String.Format("PO {0} Received", reader.GetString(1));
-                        var message = String.Format(MessageBodyFormat, reader.GetString(1), reader.GetString(1));
-                        sendEmail("jeff@jeffhanisch.com", subject, message);
-
+                        var subject = String.Format("TEST -- PO {0} Received", reader.GetString(poNumColumn));
+                        var message = String.Format(MessageBodyFormat, reader.GetString(poNumColumn), reader.GetString(3), reader.GetString(2));
+                        if ((Mode == live) || (Mode == monitor))
+                        {
+                            log.Info("sending email to buyer email address");
+                            if (sendEmail("f1nut@aol.com", subject, message))
+                            {
+                                notifiedlist.Add(reader.GetString(poNumColumn));
+                            }
+                        }
+/*                        
+                        if (((Mode == monitor) || (Mode == debug)) &&
+                            (!String.IsNullOrEmpty(MonitorEmailAddress)))
+                        {
+                            log.Info("sending email to monitor email address " + MonitorEmailAddress);
+                            if (sendEmail(MonitorEmailAddress, subject, message))
+                            {
+                                if (!notifiedlist.Contains(reader.GetString(poNumColumn)))
+                                {
+                                    notifiedlist.Add(reader.GetString(poNumColumn));
+                                }
+                            }
+                        }                       
+*/
                     }
                 }
                 catch (Exception x)
                 {
                     log.Error("Reader Error: " + x.Message);
+                }
+
+                log.Info("updating po's as notified");
+                foreach (var poNum in notifiedlist)
+                {
+                    try
+                    {
+                        log.Info("Updating po " + poNum);
+
+                        var updateCommand = string.Format("update icpo set \"user_5\" = 1 where icpo.ponum = '{0}'", poNum);
+                        log.Info("Updating po command: " + updateCommand.ToString());
+                        cmd = new OdbcCommand(updateCommand, cn);
+                        cmd.ExecuteNonQuery();
+
+                    }
+                    catch (Exception x)
+                    {
+                        log.Error(String.Format("Error updating PO {0} to be Notified: {1}", poNum, x.Message));
+                    }
                 }
 
                 cn.Close();
@@ -229,7 +289,7 @@ namespace JUST_PONotifier
                 foreach(var poNum in notified) {
                     try
                     {
-                        SqlCommand update = new SqlCommand("update dbo.po SET notified='Y' WHERE po_num=@PoNum", connection);
+                        SqlCommand update = new SqlCommand("update icpo.po SET notified='Y' WHERE po_num=@PoNum", connection);
                         update.Parameters.Add("@PoNum", SqlDbType.Int, 4).Value = poNum;
                         update.ExecuteNonQuery();
                     }

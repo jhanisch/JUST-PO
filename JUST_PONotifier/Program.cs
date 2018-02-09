@@ -125,10 +125,10 @@ namespace JUST_PONotifier
                 OdbcConnection cn;
                 OdbcCommand cmd;
                 string MyString;
+                var emailAddress = "{0}@justserviceinc.com";
                 var notifiedlist = new ArrayList();
 
-                //                MyString = "Select icpo.buyer, icpo.ponum, user.username from icpo, user where icpo.ponum = '87000' and icpo.buyer = user.usernum order by icpo.ponum asc";
-                MyString = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3, icpo.user_4, icpo.user_5 from icpo where icpo.ponum = '87000' and icpo.user_5 = 0 order by icpo.ponum asc";
+                MyString = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3, icpo.user_4, icpo.user_5 from icpo where icpo.user_3 is not null and icpo.user_5 = 0 order by icpo.ponum asc";
                 // "user = premployee"
                 // user_1 = receiving rack location
                 // user_2 = Receiver
@@ -136,11 +136,11 @@ namespace JUST_PONotifier
                 // user_4 = Bin Cleared Date
                 // user_5 = Notified
 
-                log.Info("SQL: " + MyString);
+                //log.Info("SQL: " + MyString);
 
                 OdbcConnectionStringBuilder just = new OdbcConnectionStringBuilder();
                 just.Driver = "ComputerEase";
-                just.Add("Dsn", "Company 4");
+                just.Add("Dsn", "Company 0");
                 just.Add("Uid", Uid);
                 just.Add("Pwd", Pwd);
 
@@ -154,11 +154,16 @@ namespace JUST_PONotifier
                 {
                     var buyerColumn = reader.GetOrdinal("buyer");
                     var poNumColumn = reader.GetOrdinal("ponum");
-                    log.Info("buyer column: " + buyerColumn);
-
+                    /*
+                    log.Info("column names");
+                    for (int col = 0; col < reader.FieldCount; col++)
+                    {
+                        log.Info(reader.GetName(col));
+                    }
+                    */
                     while (reader.Read())
                     {
-                        var line = new StringBuilder();
+/*                        var line = new StringBuilder();
                         line.Append(reader.GetString(buyerColumn));
                         line.Append(", ");
                         line.Append(reader.GetString(poNumColumn));
@@ -178,16 +183,31 @@ namespace JUST_PONotifier
                         line.Append(", user_5: ");
                         line.Append(user_5);
                         log.Info(line);
-
-                        var subject = String.Format("TEST -- PO {0} Received", reader.GetString(poNumColumn));
+*/
+                        var subject = String.Format("Purchase Order {0} Received", reader.GetString(poNumColumn));
                         var message = String.Format(MessageBodyFormat, reader.GetString(poNumColumn), reader.GetString(3), reader.GetString(2));
+
+
                         if ((Mode == live) || (Mode == monitor))
                         {
-                            log.Info("sending email to buyer email address");
-                            if (sendEmail("f1nut@aol.com", subject, message))
+                            log.Info("sending email to buyer");
+                            var buyer = reader.GetString(buyerColumn);
+                            if (buyer.Length > 0)
                             {
-                                notifiedlist.Add(reader.GetString(poNumColumn));
+                                if (sendEmail(string.Format(emailAddress, reader.GetString(buyerColumn).Replace(" ", string.Empty)), subject, message))
+                                {
+                                    notifiedlist.Add(reader.GetString(poNumColumn));
+                                }
                             }
+                            else
+                            {
+                                log.Error("Purchase Order " + reader.GetString(poNumColumn) + " does not have a buyer defined");
+                            }
+
+                        }
+                        else
+                        {
+                            log.Info("Debug: This email would have been sent to " + string.Format(emailAddress, reader.GetString(buyerColumn).Replace(" ", string.Empty)) + "\r\n subject: " + subject + "\r\n message: " + message + "\r\n");
                         }
 /*                        
                         if (((Mode == monitor) || (Mode == debug)) &&
@@ -210,18 +230,16 @@ namespace JUST_PONotifier
                     log.Error("Reader Error: " + x.Message);
                 }
 
-                log.Info("updating po's as notified");
                 foreach (var poNum in notifiedlist)
                 {
                     try
                     {
                         log.Info("Updating po " + poNum);
-
-                        var updateCommand = string.Format("update icpo set \"user_5\" = 1 where icpo.ponum = '{0}'", poNum);
+/*                        var updateCommand = string.Format("update icpo set \"user_5\" = 1 where icpo.ponum = '{0}'", poNum);
                         log.Info("Updating po command: " + updateCommand.ToString());
                         cmd = new OdbcCommand(updateCommand, cn);
                         cmd.ExecuteNonQuery();
-
+*/
                     }
                     catch (Exception x)
                     {
@@ -239,72 +257,14 @@ namespace JUST_PONotifier
             }
 
             return;
-
-            string queryString =
-                "SELECT po_num, descr FROM dbo.po where RCVD_DATE is not null and NOTIFIED is null;";
-            ArrayList notified = new ArrayList();
-
-            using (SqlConnection connection = new SqlConnection(
-                DBConnectionString))
-            {
-                SqlCommand command = new SqlCommand(
-                    queryString, connection);
-                connection.Open();
-
-                SqlDataReader reader = command.ExecuteReader();
-                try
-                {
-                    while (reader.Read())
-                    {
-                        var subject = String.Format("PO {0} Received", reader[0]);
-                        var message = String.Format(MessageBodyFormat, reader[0], reader[1]);
-                        if ((Mode == live) || (Mode == monitor)) 
-                        {
-                            if (sendEmail("f1nut@aol.com", subject, message))
-                            {
-                                notified.Add(reader[0].ToString());
-                            }
-                        }
-
-                        if (((Mode == monitor) || (Mode == debug)) && 
-                            (!String.IsNullOrEmpty(MonitorEmailAddress))) 
-                        {
-                            if (sendEmail(MonitorEmailAddress, subject, message))
-                            {
-                                if (!notified.Contains(reader[0].ToString()))
-                                {
-                                    notified.Add(reader[0].ToString());
-                                }
-                            }
-                        }
-
-                    }
-                }
-                finally
-                {
-                    // Always call Close when done reading.
-                    reader.Close();
-                }
-
-                foreach(var poNum in notified) {
-                    try
-                    {
-                        SqlCommand update = new SqlCommand("update icpo.po SET notified='Y' WHERE po_num=@PoNum", connection);
-                        update.Parameters.Add("@PoNum", SqlDbType.Int, 4).Value = poNum;
-                        update.ExecuteNonQuery();
-                    }
-                    catch (Exception x)
-                    {
-                        log.Error(String.Format("Error updating PO as Notified: {0}", x.Message));
-                    }
-                }
-            }
         }
 
         private static bool sendEmail(string toEmailAddress, string subject, string emailBody) {
             bool result = true;
             log.Info("Sending Email to: " + toEmailAddress);
             log.Info("  Message: " + emailBody);
+
+            return true;
 
             try
             {

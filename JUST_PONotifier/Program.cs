@@ -125,19 +125,16 @@ namespace JUST_PONotifier
             {
                 OdbcConnection cn;
                 OdbcCommand cmd;
-                string MyString;
-                var emailAddress = "{0}@justserviceinc.com";
+                string POQuery;
                 var notifiedlist = new ArrayList();
 
-                MyString = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3, icpo.user_4, icpo.user_5, icpo.defaultjobnum from icpo where icpo.user_3 is not null and icpo.user_5 = 0 order by icpo.ponum asc";
+                POQuery = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3, icpo.user_4, icpo.user_5, icpo.defaultjobnum from icpo where icpo.user_3 is not null and icpo.user_5 = 0 order by icpo.ponum asc";
                 // "user = premployee"
                 // user_1 = receiving rack location
                 // user_2 = Receiver
                 // user_3 = Received Date
                 // user_4 = Bin Cleared Date
                 // user_5 = Notified
-
-                //log.Info("SQL: " + MyString);
 
                 OdbcConnectionStringBuilder just = new OdbcConnectionStringBuilder();
                 just.Driver = "ComputerEase";
@@ -146,88 +143,36 @@ namespace JUST_PONotifier
                 just.Add("Pwd", Pwd);
 
                 cn = new OdbcConnection(just.ConnectionString);
-                cmd = new OdbcCommand(MyString, cn);
+                cmd = new OdbcCommand(POQuery, cn);
                 cn.Open();
                 log.Info("connection opened successfully");
 
                 OdbcDataReader reader = cmd.ExecuteReader();
                 try
                 {
-                    var buyers = GetEmployees(cn);
-
-                    /*
-                    log.Info("column names");
-                    for (int col = 0; col < reader.FieldCount; col++)
-                    {
-                        log.Info(reader.GetName(col));
-                    }
-                    */
-                    
+                    var EmployeeEmailAddresses = GetEmployees(cn);
                     var buyerColumn = reader.GetOrdinal("buyer");
                     var poNumColumn = reader.GetOrdinal("ponum");
                     var jobNumberColumn = reader.GetOrdinal("defaultjobnum");
                     
                     while (reader.Read())
                     {
-/*                        var line = new StringBuilder();
-                        line.Append(reader.GetString(buyerColumn));
-                        line.Append(", ");
-                        line.Append(reader.GetString(poNumColumn));
-                        line.Append(", user_1: ");
-                        var user_1 = reader.GetValue(2);
-                        var user_2 = reader.GetValue(3);
-                        var user_3 = reader.GetValue(4);
-                        var user_4 = reader.GetValue(5);
-                        var user_5 = reader.GetValue(6);
-                        line.Append(user_1);
-                        line.Append(", user_2: ");
-                        line.Append(user_2);
-                        line.Append(", user_3: ");
-                        line.Append(user_3);
-                        line.Append(", user_4: ");
-                        line.Append(user_4);
-                        line.Append(", user_5: ");
-                        line.Append(user_5);
-                        log.Info(line);
-*/
-                        var subject = String.Format("Purchase Order {0} Received", reader.GetString(poNumColumn));
-                        var message = String.Format(MessageBodyFormat, reader.GetString(poNumColumn), reader.GetString(3), reader.GetString(2));
+                        log.Info("Found PO Number " + reader.GetString(poNumColumn));
+
+                        var buyer = reader.GetString(buyerColumn).ToLower();
+                        var projectManager = GetPmForJob(cn, reader.GetString(jobNumberColumn)).ToLower();
 
                         if ((Mode == live) || (Mode == monitor))
                         {
-                            try
-                            {
-                                var x = GetJob(cn, reader.GetString(jobNumberColumn));
-                                var buyerEmailAddress = buyers[reader.GetString(buyerColumn).ToLower()];
-
-                                log.Info("sending email to buyer: " + buyerEmailAddress);
-
-                                var buyer = reader.GetString(buyerColumn);
-                                if (buyer.Length > 0)
-                                {
-                                    if (sendEmail(buyerEmailAddress, subject, message))
-                                    {
-                                        notifiedlist.Add(reader.GetString(poNumColumn));
-                                    }
-                                }
-                                else
-                                {
-                                    log.Error("Purchase Order " + reader.GetString(poNumColumn) + " does not have a buyer defined");
-                                }
-
-                            }
-                            catch (Exception)
-                            {
-                                log.Info("No Email address found for buyer " + reader.GetString(buyerColumn));
-                            }
-
+                            NotifyEmployee(notifiedlist, EmployeeEmailAddresses, buyer, reader.GetString(poNumColumn), reader.GetString(3), reader.GetString(2));
+                            NotifyEmployee(notifiedlist, EmployeeEmailAddresses, projectManager, reader.GetString(poNumColumn), reader.GetString(3), reader.GetString(2));
 
                         }
                         else
                         {
-                            log.Info("Debug: This email would have been sent to " + string.Format(emailAddress, reader.GetString(buyerColumn).Replace(" ", string.Empty)) + "\r\n subject: " + subject + "\r\n message: " + message + "\r\n");
+                            log.Info("Debug: Notification email would have been sent to buyer: " + buyer + " and/or Project Manager: " + projectManager);
                         }
-/*                        
+/*
                         if (((Mode == monitor) || (Mode == debug)) &&
                             (!String.IsNullOrEmpty(MonitorEmailAddress)))
                         {
@@ -275,6 +220,35 @@ namespace JUST_PONotifier
             }
 
             return;
+        }
+
+        private static void NotifyEmployee(ArrayList notifiedlist, Dictionary<string, string> EmployeeEmailAddresses, string employee, string poNum, string receivedBy, string bin)
+        {
+            var subject = String.Format("Purchase Order {0} Received", poNum);
+            var message = String.Format(MessageBodyFormat, poNum, receivedBy, bin);
+
+            try
+            {
+                var emailAddress = EmployeeEmailAddresses[employee];
+
+                log.Info("sending email to: " + emailAddress);
+
+                if (emailAddress.Length > 0)
+                {
+                    if (sendEmail(emailAddress, subject, message))
+                    {
+                        notifiedlist.Add(poNum);
+                    }
+                }
+                else
+                {
+                    log.Error("Purchase Order " + poNum + " does not have an email address defined");
+                }
+            }
+            catch (Exception)
+            {
+                log.Info("No Email address found for " + employee);
+            }
         }
 
         private static bool sendEmail(string toEmailAddress, string subject, string emailBody) {
@@ -334,10 +308,20 @@ namespace JUST_PONotifier
             return buyers;
         }
 
-        private static string GetJob(OdbcConnection cn, string jobNum)
+        private static string GetPmForJob(OdbcConnection cn, string jobNum)
         {
-            log.Info("GetJob, looking up job number " + jobNum);
-            var jobQuery = "Select user_1, user_2 from jcjob where user_1 = '{0}'";
+            // from the jcjob table (Company 0)
+            // user_1 = job description
+            // user_2 = sales person
+            // user_3 = designer
+            // user_4 = Projet Manager
+            // user_5 = SM
+            // user_6 = Fitter
+            // user_7 = Plumber
+            // user_8 = Tech 1
+            // user_9 = Tech 2
+
+            var jobQuery = "Select user_4 from jcjob where jobnum = '{0}'";
             var jobCmd = new OdbcCommand(string.Format(jobQuery, jobNum), cn);
             string tech = string.Empty;
 
@@ -345,21 +329,17 @@ namespace JUST_PONotifier
 
             while (jobReader.Read())
             {
-
-                log.Info("jcjob column names");
-                for (int col = 0; col < jobReader.FieldCount; col++)
-                {
-                    log.Info(jobReader.GetName(col));
-                }
-
                 tech = jobReader.GetString(0);
             }
 
-            log.Info("GetJob returning tech " + tech);
-
             return tech;
         }
-
-
     }
 }
+/*
+log.Info("column names");
+for (int col = 0; col < reader.FieldCount; col++)
+{
+    log.Info(reader.GetName(col));
+}
+*/

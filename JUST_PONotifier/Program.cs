@@ -196,7 +196,7 @@ namespace JUST_PONotifier
                 {
                     log.Error("Reader Error: " + x.Message);
                 }
-                /*
+
                 foreach (var poNum in notifiedlist)
                 {
                     try
@@ -210,9 +210,7 @@ namespace JUST_PONotifier
                         log.Error(String.Format("Error updating PO {0} to be Notified: {1}", poNum, x.Message));
                     }
                 }
-                */
                 cn.Close();
-                log.Info("connection closed successfully");
             }
             catch (Exception x)
             {
@@ -256,8 +254,6 @@ namespace JUST_PONotifier
             bool result = true;
             log.Info("Sending Email to: " + toEmailAddress);
             log.Info("  Message: " + emailBody);
-
-            return true;
 
             try
             {
@@ -313,7 +309,7 @@ namespace JUST_PONotifier
             // user_1 = job description
             // user_2 = sales person
             // user_3 = designer
-            // user_4 = Projet Manager
+            // user_4 = Project Manager
             // user_5 = SM
             // user_6 = Fitter
             // user_7 = Plumber

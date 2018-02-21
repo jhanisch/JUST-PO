@@ -8,8 +8,9 @@ using System.Data.SqlClient;
 using System.Net;
 using System.Net.Mail;
 using System.Text;
+using JUST.PONotifier.Classes;
 
-namespace JUST_PONotifier
+namespace JUST.PONotifier
 {
     class MainClass
     {
@@ -29,8 +30,38 @@ namespace JUST_PONotifier
         private static String MonitorEmailAddress;
         private static ArrayList ValidModes = new ArrayList() { debug, live, monitor };
 
-        private static string EmailSubject = "Purchase Order {0} Received";
+        private static string EmailSubject = "Purchase Order {0} Received from {1}";
         private static string MessageBodyFormat = "<h2>Purchase Order {0} Received</h2><br><h3>Purchase Order {0} has been received by {1} and has been placed in bin {2}</h3>";
+        private static string MessageBodyFormat2 = @"<!DOCTYPE html>
+< html >
+    < head >
+        < meta charset=""utf-8"" />
+        <title></title>
+    </head>
+    <body style = ""margin-left: 20px; margin-right:20px"" >
+        <hr/>
+        <h2> Purchase Order {0} Received</h2>
+        <hr/>
+        <p>
+        Received By: {1}<br/>
+        Received Date: {2}<br/>
+        Located in bin: {3}<br />
+        Job #{4} - {5}<br/>
+        Vendor Name: {6}<br/>
+
+        <table style = ""width:50%; text-align: left"" border=""1"" cellpadding=""10"" cellspacing=""0"">
+            <tr style = ""background-color: cyan"" >
+                <th>Item Number</th>
+                <th>Description</th>
+                <th style = ""text-align: center"">Qty</th>
+            </tr>";
+
+        private static string messageBodyTableItem = @"<tr>
+                <td>{0}</td>
+                <td>{1}</td>
+                <td style=""text-align: center"">{2}</td>
+            </tr>";
+        private static string messageBodyTail = @"</table> </body></html>";
 
         static void Main(string[] args)
         {
@@ -164,19 +195,18 @@ namespace JUST_PONotifier
                         var bin = reader.GetString(binColumn);
 
                         var buyer = reader.GetString(buyerColumn).ToLower();
-                        var projectManager = GetPmForJob(cn, reader.GetString(jobNumberColumn)).ToLower();
+                        var job = GetJobInformation(cn, reader.GetString(jobNumberColumn));
 
                         log.Info("Found PO Number " + purchaseOrderNumber);
 
                         if ((Mode == live) || (Mode == monitor))
                         {
                             NotifyEmployee(notifiedlist, EmployeeEmailAddresses, buyer, purchaseOrderNumber, receivedBy, bin);
-                            NotifyEmployee(notifiedlist, EmployeeEmailAddresses, projectManager, purchaseOrderNumber, receivedBy, bin);
-
+                            NotifyEmployee(notifiedlist, EmployeeEmailAddresses, job.ProjectManagerName , purchaseOrderNumber, receivedBy, bin);
                         }
                         else
                         {
-                            log.Info("Debug: Notification email would have been sent to buyer: " + buyer + " and/or Project Manager: " + projectManager);
+                            log.Info("Debug: Notification email would have been sent to buyer: " + buyer + " and/or Project Manager: " + job.ProjectManagerName);
                         }
 
                         if (((Mode == monitor) || (Mode == debug)) &&
@@ -303,7 +333,7 @@ namespace JUST_PONotifier
             return buyers;
         }
 
-        private static string GetPmForJob(OdbcConnection cn, string jobNum)
+        private static JobInformation GetJobInformation(OdbcConnection cn, string jobNum)
         {
             // from the jcjob table (Company 0)
             // user_1 = job description
@@ -316,18 +346,23 @@ namespace JUST_PONotifier
             // user_8 = Tech 1
             // user_9 = Tech 2
 
-            var jobQuery = "Select user_4 from jcjob where jobnum = '{0}'";
+            // add to email:
+            //  user_1 
+
+            var jobQuery = "Select user_4, jobnum, jobname from jcjob where jobnum = '{0}'";
             var jobCmd = new OdbcCommand(string.Format(jobQuery, jobNum), cn);
-            string tech = string.Empty;
+            var result = new JobInformation(string.Empty, string.Empty, string.Empty);
 
             OdbcDataReader jobReader = jobCmd.ExecuteReader();
 
             while (jobReader.Read())
             {
-                tech = jobReader.GetString(0);
+                result.ProjectManagerName = jobReader.GetString(0).ToLower();
+                result.JobNumber = jobReader.GetString(1);
+                result.JobName = jobReader.GetString(2);
             }
 
-            return tech;
+            return result;
         }
     }
 }

@@ -32,12 +32,7 @@ namespace JUST.PONotifier
 
         private static string EmailSubject = "Purchase Order {0} Received from {1}";
         private static string MessageBodyFormat = "<h2>Purchase Order {0} Received</h2><br><h3>Purchase Order {0} has been received by {1} and has been placed in bin {2}</h3>";
-        private static string MessageBodyFormat2 = @"<!DOCTYPE html>
-< html >
-    < head >
-        < meta charset=""utf-8"" />
-        <title></title>
-    </head>
+        private static string MessageBodyFormat2 = @"
     <body style = ""margin-left: 20px; margin-right:20px"" >
         <hr/>
         <h2> Purchase Order {0} Received</h2>
@@ -61,7 +56,7 @@ namespace JUST.PONotifier
                 <td>{1}</td>
                 <td style=""text-align: center"">{2}</td>
             </tr>";
-        private static string messageBodyTail = @"</table> </body></html>";
+        private static string messageBodyTail = @"</table>";
 
         static void Main(string[] args)
         {
@@ -165,7 +160,7 @@ namespace JUST.PONotifier
                 // user_3 = Received Date
                 // user_4 = Bin Cleared Date
                 // user_5 = Notified
-                POQuery = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3, icpo.user_4, icpo.user_5, icpo.defaultjobnum from icpo where icpo.user_3 is not null and icpo.user_5 = 0 order by icpo.ponum asc";
+                POQuery = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3, icpo.user_4, icpo.user_5, icpo.defaultjobnum from icpo where icpo.user_3 is not null and icpo.user_5 = 1 order by icpo.ponum asc";
 
                 OdbcConnectionStringBuilder just = new OdbcConnectionStringBuilder();
                 just.Driver = "ComputerEase";
@@ -187,6 +182,7 @@ namespace JUST.PONotifier
                     var jobNumberColumn = reader.GetOrdinal("defaultjobnum");
                     var binColumn = reader.GetOrdinal("user_1");
                     var receivedByColumn = reader.GetOrdinal("user_2");
+                    var receivedOnDateColumn = reader.GetOrdinal("user_3");
                     
                     while (reader.Read())
                     {
@@ -199,6 +195,9 @@ namespace JUST.PONotifier
 
                         log.Info("Found PO Number " + purchaseOrderNumber);
 
+                        var emailBody = String.Format(MessageBodyFormat2, purchaseOrderNumber, receivedBy, reader.GetDate(receivedOnDateColumn).ToShortDateString(), bin,  job.JobNumber, job.JobName, "7") + messageBodyTail;
+//                        log.Info("[MONITOR] email message: " + emailBody);
+/*
                         if ((Mode == live) || (Mode == monitor))
                         {
                             NotifyEmployee(notifiedlist, EmployeeEmailAddresses, buyer, purchaseOrderNumber, receivedBy, bin);
@@ -208,11 +207,11 @@ namespace JUST.PONotifier
                         {
                             log.Info("Debug: Notification email would have been sent to buyer: " + buyer + " and/or Project Manager: " + job.ProjectManagerName);
                         }
-
+                        */
                         if (((Mode == monitor) || (Mode == debug)) &&
                             (!String.IsNullOrEmpty(MonitorEmailAddress)))
                         {
-                            if (sendEmail(MonitorEmailAddress, String.Format(EmailSubject, purchaseOrderNumber), String.Format(MessageBodyFormat, purchaseOrderNumber, receivedBy, bin)))
+                            if (sendEmail(MonitorEmailAddress, String.Format(EmailSubject, purchaseOrderNumber, "company here"), emailBody))
                             {
                                 if (!notifiedlist.Contains(reader.GetString(poNumColumn)))
                                 {
@@ -226,7 +225,7 @@ namespace JUST.PONotifier
                 {
                     log.Error("Reader Error: " + x.Message);
                 }
-
+                /*
                 foreach (var poNum in notifiedlist)
                 {
                     try
@@ -240,6 +239,8 @@ namespace JUST.PONotifier
                         log.Error(String.Format("Error updating PO {0} to be Notified: {1}", poNum, x.Message));
                     }
                 }
+                */
+
                 cn.Close();
             }
             catch (Exception x)
@@ -348,8 +349,7 @@ namespace JUST.PONotifier
 
             // add to email:
             //  user_1 
-
-            var jobQuery = "Select user_4, jobnum, jobname from jcjob where jobnum = '{0}'";
+            var jobQuery = "Select user_4, jobnum, name from jcjob where jobnum = '{0}'";
             var jobCmd = new OdbcCommand(string.Format(jobQuery, jobNum), cn);
             var result = new JobInformation(string.Empty, string.Empty, string.Empty);
 

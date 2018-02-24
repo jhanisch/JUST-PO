@@ -3,6 +3,25 @@ using System.Collections.Generic;
 
 namespace JUST.PONotifier.Classes
 {
+
+    public class Employee
+    {
+        public Employee()
+        {
+            Name = string.Empty;
+            EmailAddress = string.Empty;
+        }
+
+        public Employee(string name, string emailAddress)
+        {
+            Name = name;
+            EmailAddress = emailAddress;
+        }
+
+        public string Name { get; set; }
+        public string EmailAddress { get; set; }
+    }
+
     public class PurchaseOrderItem
     {
         public PurchaseOrderItem()

@@ -8,16 +8,19 @@ namespace JUST.PONotifier.Classes
     {
         public Employee()
         {
+            EmployeeId = string.Empty;
             Name = string.Empty;
             EmailAddress = string.Empty;
         }
 
-        public Employee(string name, string emailAddress)
+        public Employee(string employeeId, string name, string emailAddress)
         {
+            EmployeeId = employeeId;
             Name = name;
             EmailAddress = emailAddress;
         }
 
+        public string EmployeeId { get; set; }
         public string Name { get; set; }
         public string EmailAddress { get; set; }
     }

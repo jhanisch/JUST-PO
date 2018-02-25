@@ -5,6 +5,7 @@ using System.Configuration;
 using System.Data;
 using System.Data.Odbc;
 using System.Data.SqlClient;
+using System.Linq;
 using System.Net;
 using System.Net.Mail;
 using System.Text;
@@ -62,18 +63,17 @@ namespace JUST.PONotifier
         static void Main(string[] args)
         {
             try {
-                log.Info("Starting up at " + DateTime.Now);
+                log.Info("[Main] Starting up at " + DateTime.Now);
 
                 getConfiguration();
-                log.Info("Got Configuration");
 
                 ProcessPOData();
 
-                log.Info("Completion at " + DateTime.Now);
+                log.Info("[Main] Completion at " + DateTime.Now);
             }
             catch (Exception ex)
             {
-                log.Error("Error: " + ex.Message);
+                log.Error("[Main] Error: " + ex.Message);
             }
         }
 
@@ -161,7 +161,7 @@ namespace JUST.PONotifier
                 // user_3 = Received Date
                 // user_4 = Bin Cleared Date
                 // user_5 = Notified
-                POQuery = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3, icpo.user_4, icpo.user_5, icpo.defaultjobnum, vendor.name as vendorName from icpo inner join vendor on vendor.vennum = icpo.vennum where icpo.user_3 is not null and icpo.user_5 = 1 order by icpo.ponum asc";
+                POQuery = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3, icpo.user_4, icpo.user_5, icpo.defaultjobnum, vendor.name as vendorName from icpo inner join vendor on vendor.vennum = icpo.vennum where icpo.user_3 is not null and icpo.user_5 = 0 order by icpo.ponum asc";
 
                 OdbcConnectionStringBuilder just = new OdbcConnectionStringBuilder();
                 just.Driver = "ComputerEase";
@@ -172,7 +172,7 @@ namespace JUST.PONotifier
                 cn = new OdbcConnection(just.ConnectionString);
                 cmd = new OdbcCommand(POQuery, cn);
                 cn.Open();
-                log.Info("connection to database opened successfully");
+                log.Info("[ProcessPOData] Connection to database opened successfully");
 
                 OdbcDataReader reader = cmd.ExecuteReader();
                 try
@@ -193,37 +193,40 @@ namespace JUST.PONotifier
                         var bin = reader.GetString(binColumn);
                         var receivedOnDate = reader.GetDate(receivedOnDateColumn).ToShortDateString();
                         var buyer = reader.GetString(buyerColumn).ToLower();
-                        var buyerName = string.Empty;
                         var vendor = reader.GetString(vendorNameColumn);
                         var job = GetEmailBodyInformation(cn, reader.GetString(jobNumberColumn), purchaseOrderNumber);
-
                         var buyerEmployee = GetEmployeeInformation(EmployeeEmailAddresses, buyer);
                         var projectManagerEmployee = job.ProjectManagerName.Length > 0 ? GetEmployeeInformation(EmployeeEmailAddresses, job.ProjectManagerName) : new Employee();
 
-                        log.Info("Found PO Number " + purchaseOrderNumber);
+                        log.Info("[ProcessPOData] ----------------- Found PO Number " + purchaseOrderNumber + " -------------------");
 
-                        string emailBody = FormatEmailBody(receivedOnDate, purchaseOrderNumber, receivedBy, bin, buyerEmployee.Name, vendor, job);
+                        var emailSubject = String.Format(EmailSubject, purchaseOrderNumber, vendor);
+                        var emailBody = FormatEmailBody(receivedOnDate, purchaseOrderNumber, receivedBy, bin, buyerEmployee.Name, vendor, job);
 
 //                        log.Info("[MONITOR] email message: " + emailBody);
                         if ((Mode == live) || (Mode == monitor))
                         {
+                            log.Info("[ProcessPOData] Mode: " + Mode.ToString() + ", buyer: " + buyer + ", buyer email:" + buyerEmployee.EmailAddress);
 
-                            NotifyEmployee(notifiedlist, buyerEmployee.EmailAddress, purchaseOrderNumber, receivedBy, bin, emailBody);
-                            NotifyEmployee(notifiedlist, projectManagerEmployee.EmailAddress, purchaseOrderNumber, receivedBy, bin, emailBody);
+                            NotifyEmployee(notifiedlist, purchaseOrderNumber, buyerEmployee.EmailAddress, receivedBy, bin, emailSubject, emailBody);
+                            if (projectManagerEmployee.EmailAddress.Length > 0 && buyerEmployee.EmailAddress != projectManagerEmployee.EmailAddress)
+                            {
+                                NotifyEmployee(notifiedlist, purchaseOrderNumber, projectManagerEmployee.EmailAddress, receivedBy, bin, emailSubject, emailBody);
+                            }
                         }
                         else
                         {
-                            log.Info("Debug: Notification email would have been sent to buyer: " + buyer + " and/or Project Manager: " + job.ProjectManagerName);
+                            log.Info("[ProcessPOData] Debug: Notification email would have been sent to buyer: " + buyer + " and/or Project Manager: " + job.ProjectManagerName);
                         }
 
                         if (((Mode == monitor) || (Mode == debug)) &&
                             (!String.IsNullOrEmpty(MonitorEmailAddress)))
                         {
-                            if (sendEmail(MonitorEmailAddress, String.Format(EmailSubject, purchaseOrderNumber, vendor), emailBody))
+                            if (sendEmail(MonitorEmailAddress, emailSubject, emailBody))
                             {
-                                if (!notifiedlist.Contains(reader.GetString(poNumColumn)))
+                                if (!notifiedlist.Contains(purchaseOrderNumber))
                                 {
-                                    notifiedlist.Add(reader.GetString(poNumColumn));
+                                    notifiedlist.Add(purchaseOrderNumber);
                                 }
                             }
                         }
@@ -231,9 +234,9 @@ namespace JUST.PONotifier
                 }
                 catch (Exception x)
                 {
-                    log.Error("Reader Error: " + x.Message);
+                    log.Error("[ProcessPOData] Reader Error: " + x.Message);
                 }
-                /*
+                
                 foreach (var poNum in notifiedlist)
                 {
                     try
@@ -244,39 +247,50 @@ namespace JUST.PONotifier
                     }
                     catch (Exception x)
                     {
-                        log.Error(String.Format("Error updating PO {0} to be Notified: {1}", poNum, x.Message));
+                        log.Error(String.Format("[ProcessPOData] Error updating PO {0} to be Notified: {1}", poNum, x.Message));
                     }
                 }
-                */
 
                 reader.Close();
                 cn.Close();
             }
             catch (Exception x)
             {
-                log.Error("Exception: " + x.Message);
+                log.Error("[ProcessPOData] Exception: " + x.Message);
                 return;
             }
 
             return;
         }
 
-        private static Employee GetEmployeeInformation(Dictionary<string, Employee> EmployeeEmailAddresses, string employee)
+        private static Employee GetEmployeeInformation(List<Employee> EmployeeEmailAddresses, string employee)
         {
-            log.Info("  Looking up email address for " + employee);
             try
             {
-                var e = EmployeeEmailAddresses[employee];
+                var e = EmployeeEmailAddresses.SingleOrDefault(x => x.EmployeeId.ToLowerInvariant() == employee.ToLowerInvariant());
 
-                if (e.EmailAddress.Length > 0)
+                if (e != null && e.EmailAddress.Length > 0)
                 {
-                    log.Info("  Found employee: " + e.EmailAddress + ", " + e.Name);
                     return e;
                 }
             }
-            catch (KeyNotFoundException ex)
+            catch (KeyNotFoundException)
             {
-                log.Info("  No Employee record found for : " + employee);
+                log.Info("[GetEmployeeInformation] No Employee record found by employeeid for : " + employee);
+            }
+
+            try
+            {
+                var e = EmployeeEmailAddresses.SingleOrDefault(x => x.Name.ToLowerInvariant() == employee.ToLowerInvariant());
+
+                if (e != null && e.EmailAddress.Length > 0)
+                {
+                    return e;
+                }
+            }
+            catch (KeyNotFoundException)
+            {
+                log.Info("[GetEmployeeInformation] No Employee record found by name for : " + employee);
             }
 
             return new Employee();
@@ -295,39 +309,38 @@ namespace JUST.PONotifier
             return emailBody;
         }
 
-        private static void NotifyEmployee(ArrayList notifiedlist, string employeeEmailAddress, string poNum, string receivedBy, string bin, string emailBody)
+        private static void NotifyEmployee(ArrayList notifiedlist, string poNum, string employeeEmailAddress, string receivedBy, string bin, string emailSubject, string emailBody)
         {
-            var subject = String.Format(EmailSubject, poNum);
-
             try
             {
                 if (employeeEmailAddress.Length > 0)
                 {
-                    log.Info("sending email to: " + employeeEmailAddress);
-//                    if (sendEmail(employeeEmailAddress, subject, emailBody))
-//                    {
-//                        notifiedlist.Add(poNum);
-//                    }
+                    log.Info("  [NotifyEmployee]   sending email to: " + employeeEmailAddress);
+                    if (sendEmail(employeeEmailAddress, emailSubject, emailBody))
+                    {
+                        notifiedlist.Add(poNum);
+                    }
                 }
                 else
                 {
-                    log.Error("Purchase Order " + poNum + " does not have an email address defined");
+                    log.Error("  [NotifyEmployee]  Purchase Order does not have an email address defined [" + emailSubject + "]");
                 }
             }
             catch (Exception ex)
             {
-                log.Info("Notify Employee error " + ex.Message);
+                log.Info("  [NotifyEmployee] Error " + ex.Message);
             }
         }
 
         private static bool sendEmail(string toEmailAddress, string subject, string emailBody) {
             bool result = true;
-            log.Info("Sending Email to: " + toEmailAddress);
-            log.Info("  Message: " + emailBody);
+            if (toEmailAddress.Length == 0)
+            {
+                log.Error("  [sendEmail] No toEmailAddress to send message to");
+                return false;
+            }
 
-            return true;
-
-
+            log.Info("  [sendEmail] Sending Email to: " + toEmailAddress);
             try
             {
                 using (MailMessage mail = new MailMessage())
@@ -343,22 +356,23 @@ namespace JUST.PONotifier
                         smtp.Credentials = new NetworkCredential(FromEmailAddress, FromEmailPassword);
                         smtp.EnableSsl = true;
                         smtp.Send(mail);
-                        log.Info("  Email Sent to " + toEmailAddress);
+                        log.Info("  [sendEmail] Email Sent to " + toEmailAddress);
                     }
                 }
             }
             catch (Exception x) {
                 result = false;
-                log.Error(String.Format("Error Sending email to {0}, message: {1}", x.Message, emailBody));
+                log.Error(String.Format("  [sendEmail] Error Sending email to {0}, message: {1}", x.Message, emailBody));
             }
 
             return result;
         }
 
-        private static Dictionary<string, Employee> GetEmployees(OdbcConnection cn)
+        private static List<Employee> GetEmployees(OdbcConnection cn)
         {
+            var employees = new List<Employee>();
+
             var buyerQuery = "Select user_1, user_2, name from premployee where user_1 is not null";
-            var buyers = new Dictionary<string, Employee>();
             var buyerCmd = new OdbcCommand(buyerQuery, cn);
 
             OdbcDataReader buyerReader = buyerCmd.ExecuteReader();
@@ -369,17 +383,15 @@ namespace JUST.PONotifier
                 var email = buyerReader.GetString(1);
                 var name = buyerReader.GetString(2);
 
-                log.Info(" emp: " + buyer + ", " + email + ", " + name);
-
                 if (buyer.Trim().Length > 0)
                 {
-                    buyers.Add(buyer.ToLower(), new Employee(name, email));
+                    employees.Add(new Employee(buyer, name, email));
                 }
             }
 
             buyerReader.Close();
 
-            return buyers;
+            return employees;
         }
 
         private static JobInformation GetEmailBodyInformation(OdbcConnection cn, string jobNum, string purchaseOrderNumber)
@@ -413,7 +425,7 @@ namespace JUST.PONotifier
             }
             else
             {
-                log.Info(string.Format("ERROR: Job Number (jobnum) {0} not found in jcjob", jobNum));
+                log.Info(string.Format("  [GetEmailBodyInformation] ERROR: Job Number (jobnum) {0} not found in jcjob", jobNum));
             }
 
             jobReader.Close();

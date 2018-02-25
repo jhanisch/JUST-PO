@@ -82,3 +82,6 @@ Blank app.config
 </configuration>
 
 
+History
+1.00a - Initial proof of concept.  Identifies PO's to notify and sends simple one line emails
+1.00b - Updates email format to include  Job # and Description, Customer, Vendor, Buyer and PO Detail line items.

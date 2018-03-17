@@ -15,6 +15,7 @@ namespace JUST.PONotifier
 {
     class MainClass
     {
+        /* version 1.01  */
         private const string debug = "debug";
         private const string live = "live";
         private const string monitor = "monitor";
@@ -250,7 +251,7 @@ namespace JUST.PONotifier
                         log.Error(String.Format("[ProcessPOData] Error updating PO {0} to be Notified: {1}", poNum, x.Message));
                     }
                 }
-
+                
                 reader.Close();
                 cn.Close();
             }
@@ -267,7 +268,7 @@ namespace JUST.PONotifier
         {
             try
             {
-                var e = EmployeeEmailAddresses.SingleOrDefault(x => x.EmployeeId.ToLowerInvariant() == employee.ToLowerInvariant());
+                var e = EmployeeEmailAddresses.FirstOrDefault(x => x.EmployeeId.ToLowerInvariant() == employee.ToLowerInvariant());
 
                 if (e != null && e.EmailAddress.Length > 0)
                 {
@@ -278,10 +279,14 @@ namespace JUST.PONotifier
             {
                 log.Info("[GetEmployeeInformation] No Employee record found by employeeid for : " + employee);
             }
+            catch (Exception x)
+            {
+                log.Error("[GetEmployeeInformation] by employeeid exception: " + x.Message);
+            }
 
             try
             {
-                var e = EmployeeEmailAddresses.SingleOrDefault(x => x.Name.ToLowerInvariant() == employee.ToLowerInvariant());
+                var e = EmployeeEmailAddresses.FirstOrDefault(x => x.Name.ToLowerInvariant() == employee.ToLowerInvariant());
 
                 if (e != null && e.EmailAddress.Length > 0)
                 {
@@ -291,6 +296,10 @@ namespace JUST.PONotifier
             catch (KeyNotFoundException)
             {
                 log.Info("[GetEmployeeInformation] No Employee record found by name for : " + employee);
+            }
+            catch (Exception x)
+            {
+                log.Error("[GetEmployeeInformation] by name exception: " + x.Message);
             }
 
             return new Employee();

@@ -15,7 +15,7 @@ namespace JUST.PONotifier
 {
     class MainClass
     {
-        /* version 1.01  */
+        /* version 1.02  */
         private const string debug = "debug";
         private const string live = "live";
         private const string monitor = "monitor";
@@ -46,6 +46,7 @@ namespace JUST.PONotifier
         Customer: {6}<br/>
         Vendor Name: {7}<br/>
         Buyer: {8}<br/>
+        Notes: {9}<br/>
 
         <table style = ""width:50%; text-align: left"" border=""1"" cellpadding=""10"" cellspacing=""0"">
             <tr style = ""background-color: cyan"" >
@@ -59,7 +60,7 @@ namespace JUST.PONotifier
                 <td>{1}</td>
                 <td style=""text-align: center"">{2}</td>
             </tr>";
-        private static string messageBodyTail = @"</table>";
+        private static string messageBodyTail = @"</table></body>";
 
         static void Main(string[] args)
         {
@@ -186,6 +187,7 @@ namespace JUST.PONotifier
                     var receivedByColumn = reader.GetOrdinal("user_2");
                     var receivedOnDateColumn = reader.GetOrdinal("user_3");
                     var vendorNameColumn = reader.GetOrdinal("vendorName");
+                    var notesColumn = reader.GetOrdinal("user_6");
                     
                     while (reader.Read())
                     {
@@ -195,6 +197,7 @@ namespace JUST.PONotifier
                         var receivedOnDate = reader.GetDate(receivedOnDateColumn).ToShortDateString();
                         var buyer = reader.GetString(buyerColumn).ToLower();
                         var vendor = reader.GetString(vendorNameColumn);
+                        var notes = reader.GetString(notesColumn);
                         var job = GetEmailBodyInformation(cn, reader.GetString(jobNumberColumn), purchaseOrderNumber);
                         var buyerEmployee = GetEmployeeInformation(EmployeeEmailAddresses, buyer);
                         var projectManagerEmployee = job.ProjectManagerName.Length > 0 ? GetEmployeeInformation(EmployeeEmailAddresses, job.ProjectManagerName) : new Employee();
@@ -202,7 +205,7 @@ namespace JUST.PONotifier
                         log.Info("[ProcessPOData] ----------------- Found PO Number " + purchaseOrderNumber + " -------------------");
 
                         var emailSubject = String.Format(EmailSubject, purchaseOrderNumber, vendor);
-                        var emailBody = FormatEmailBody(receivedOnDate, purchaseOrderNumber, receivedBy, bin, buyerEmployee.Name, vendor, job);
+                        var emailBody = FormatEmailBody(receivedOnDate, purchaseOrderNumber, receivedBy, bin, buyerEmployee.Name, vendor, job, notes);
 
 //                        log.Info("[MONITOR] email message: " + emailBody);
                         if ((Mode == live) || (Mode == monitor))
@@ -237,7 +240,7 @@ namespace JUST.PONotifier
                 {
                     log.Error("[ProcessPOData] Reader Error: " + x.Message);
                 }
-                
+
                 foreach (var poNum in notifiedlist)
                 {
                     try
@@ -251,7 +254,7 @@ namespace JUST.PONotifier
                         log.Error(String.Format("[ProcessPOData] Error updating PO {0} to be Notified: {1}", poNum, x.Message));
                     }
                 }
-                
+
                 reader.Close();
                 cn.Close();
             }
@@ -305,7 +308,7 @@ namespace JUST.PONotifier
             return new Employee();
         }
 
-        private static string FormatEmailBody(string receivedOnDate, string purchaseOrderNumber, string receivedBy, string bin, string buyerName, string vendor, JobInformation job)
+        private static string FormatEmailBody(string receivedOnDate, string purchaseOrderNumber, string receivedBy, string bin, string buyerName, string vendor, JobInformation job, string notes)
         {
             var purchaseOrderItemTable = string.Empty;
             foreach (PurchaseOrderItem poItem in job.PurchaseOrderItems)
@@ -313,7 +316,7 @@ namespace JUST.PONotifier
                 purchaseOrderItemTable += string.Format(messageBodyTableItem, poItem.ItemNumber, poItem.Description, poItem.Quantity);
             }
 
-            var emailBody = String.Format(MessageBodyFormat2, purchaseOrderNumber, receivedBy, receivedOnDate, bin, job.JobNumber, job.JobName, job.CustomerName, vendor, buyerName) + purchaseOrderItemTable + messageBodyTail;
+            var emailBody = String.Format(MessageBodyFormat2, purchaseOrderNumber, receivedBy, receivedOnDate, bin, job.JobNumber, job.JobName, job.CustomerName, vendor, buyerName, notes) + purchaseOrderItemTable + messageBodyTail;
 
             return emailBody;
         }
@@ -439,7 +442,7 @@ namespace JUST.PONotifier
 
             jobReader.Close();
 
-            var poIitemQuery = "Select icpoitem.itemnum, icpoitem.des, icpoitem.received, icpoitem.unitprice from icpoitem where ponum = '{0}' order by icpoitem.itemnum asc";
+            var poIitemQuery = "Select icpoitem.itemnum, icpoitem.des, icpoitem.outstanding, icpoitem.unitprice from icpoitem where ponum = '{0}' order by icpoitem.itemnum asc";
             var poItemCmd = new OdbcCommand(string.Format(poIitemQuery, purchaseOrderNumber), cn);
             OdbcDataReader poItemReader = poItemCmd.ExecuteReader();
 

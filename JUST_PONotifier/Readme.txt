@@ -1,4 +1,4 @@
-﻿Version:  1.00b
+﻿Version:  1.02a
 
 What is this?
 -------------
@@ -85,3 +85,4 @@ Blank app.config
 History
 1.00a - Initial proof of concept.  Identifies PO's to notify and sends simple one line emails
 1.00b - Updates email format to include  Job # and Description, Customer, Vendor, Buyer and PO Detail line items.
+1.02a  - Updated to include Notes column in email.  Changed retrieving item quantity to use icpoitem.outstanding.

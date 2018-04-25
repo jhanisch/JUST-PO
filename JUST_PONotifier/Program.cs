@@ -29,6 +29,7 @@ namespace JUST.PONotifier
         private static int? FromEmailPort;
         private static string Mode;
         private static String MonitorEmailAddress;
+        private static string[] MonitorEmailAddresses;
         private static ArrayList ValidModes = new ArrayList() { debug, live, monitor };
 
         private static string EmailSubject = "Purchase Order {0} Received from {1}";
@@ -90,6 +91,10 @@ namespace JUST.PONotifier
 
             Mode = ConfigurationManager.AppSettings["Mode"].ToLower();
             MonitorEmailAddress = ConfigurationManager.AppSettings["MonitorEmailAddress"];
+            if (MonitorEmailAddress.Length > 0) {
+                char[] delimiterChars = { ';' };
+                MonitorEmailAddresses = MonitorEmailAddress.Split(delimiterChars);
+            }
 
             #region Validate Configuration Data
             var errorMessage = new StringBuilder();
@@ -202,11 +207,29 @@ namespace JUST.PONotifier
                         var buyerEmployee = GetEmployeeInformation(EmployeeEmailAddresses, buyer);
                         var projectManagerEmployee = job.ProjectManagerName.Length > 0 ? GetEmployeeInformation(EmployeeEmailAddresses, job.ProjectManagerName) : new Employee();
 
+                        var whoToNotify = new List<Employee>();
+                        if (((Mode == monitor) || (Mode == debug)) &&
+                            (!String.IsNullOrEmpty(MonitorEmailAddress)))
+                        {
+                            foreach (var emp in MonitorEmailAddresses)
+                            {
+                                whoToNotify.Add(new Employee() { EmailAddress = emp });
+                            }
+                        }
+
+
                         log.Info("[ProcessPOData] ----------------- Found PO Number " + purchaseOrderNumber + " -------------------");
 
                         var emailSubject = String.Format(EmailSubject, purchaseOrderNumber, vendor);
                         var emailBody = FormatEmailBody(receivedOnDate, purchaseOrderNumber, receivedBy, bin, buyerEmployee.Name, vendor, job, notes);
 
+                        foreach (var employee in whoToNotify)
+                        {
+                            log.Info("[ProcessPOData] Mode: " + Mode.ToString() + ", buyer: " + buyer + ", buyer email:" + buyerEmployee.EmailAddress);
+
+                            NotifyEmployee(notifiedlist, purchaseOrderNumber, employee.EmailAddress, receivedBy, bin, emailSubject, emailBody);
+                        }
+/*
 //                        log.Info("[MONITOR] email message: " + emailBody);
                         if ((Mode == live) || (Mode == monitor))
                         {
@@ -226,14 +249,18 @@ namespace JUST.PONotifier
                         if (((Mode == monitor) || (Mode == debug)) &&
                             (!String.IsNullOrEmpty(MonitorEmailAddress)))
                         {
-                            if (sendEmail(MonitorEmailAddress, emailSubject, emailBody))
+                            foreach (var emailAddress in MonitorEmailAddresses)
                             {
-                                if (!notifiedlist.Contains(purchaseOrderNumber))
+                                if (sendEmail(emailAddress, emailSubject, emailBody))
                                 {
-                                    notifiedlist.Add(purchaseOrderNumber);
+                                    if (!notifiedlist.Contains(purchaseOrderNumber))
+                                    {
+                                        notifiedlist.Add(purchaseOrderNumber);
+                                    }
                                 }
                             }
                         }
+                        */
                     }
                 }
                 catch (Exception x)

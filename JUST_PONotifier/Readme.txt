@@ -1,4 +1,4 @@
-﻿Version:  1.02a
+﻿Version:  1.03
 
 What is this?
 -------------
@@ -25,7 +25,8 @@ a folder, configure the app.config with values for the following required inform
 					   'monitor' will email the buyer, lead tech and monitor email addresses when
 					   a purchase order is received.
   Montior Email Address:  If desired, and the system is configured in either 'debug' or 'monitor' mode
-                       this is the email address of a user to monitor the system
+                       this is the email address of a user to monitor the system.  Multiple email addresses
+					   can be emailed, separate each email address with a ;
   Database user info:  This is the connection information for a user to log into the ComputerEase
                        database.  Required information is the User ID (Uid) and Password (Pwd)
 
@@ -68,6 +69,7 @@ Blank app.config
 
         <!-- Monitor Email Address  -->
         <!-- required when the Mode is 'monitor'-->
+		<!-- separate multiple email addresses with ; to email more than one monitor-->
         <add key="MonitorEmailAddress" value=""/>
 
 		<!-- Database connection -->
@@ -86,3 +88,4 @@ History
 1.00a - Initial proof of concept.  Identifies PO's to notify and sends simple one line emails
 1.00b - Updates email format to include  Job # and Description, Customer, Vendor, Buyer and PO Detail line items.
 1.02a  - Updated to include Notes column in email.  Changed retrieving item quantity to use icpoitem.outstanding.
+1.03  - Include the ability to email multiple Monitor Email Addresses

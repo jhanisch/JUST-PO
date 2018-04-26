@@ -15,7 +15,7 @@ namespace JUST.PONotifier
 {
     class MainClass
     {
-        /* version 1.02  */
+        /* version 1.03  */
         private const string debug = "debug";
         private const string live = "live";
         private const string monitor = "monitor";
@@ -28,7 +28,7 @@ namespace JUST.PONotifier
         private static string FromEmailSMTP;
         private static int? FromEmailPort;
         private static string Mode;
-        private static String MonitorEmailAddress;
+        private static string[] MonitorEmailAddresses;
         private static ArrayList ValidModes = new ArrayList() { debug, live, monitor };
 
         private static string EmailSubject = "Purchase Order {0} Received from {1}";
@@ -89,7 +89,12 @@ namespace JUST.PONotifier
             FromEmailPort = Convert.ToInt16(ConfigurationManager.AppSettings["FromEmailPort"]);
 
             Mode = ConfigurationManager.AppSettings["Mode"].ToLower();
-            MonitorEmailAddress = ConfigurationManager.AppSettings["MonitorEmailAddress"];
+            var MonitorEmailAddressList = ConfigurationManager.AppSettings["MonitorEmailAddress"];
+            if (MonitorEmailAddressList.Length > 0)
+            {
+                char[] delimiterChars = { ';', ',' };
+                MonitorEmailAddresses = MonitorEmailAddressList.Split(delimiterChars);
+            }
 
             #region Validate Configuration Data
             var errorMessage = new StringBuilder();
@@ -135,10 +140,12 @@ namespace JUST.PONotifier
 
             if (Mode == monitor)
             {
-                if (String.IsNullOrEmpty(MonitorEmailAddress))
+                log.Info("checking MontorEmailAddressList");
+                if (MonitorEmailAddresses == null || MonitorEmailAddresses.Length == 0)
                 {
                     errorMessage.Append("Monitor Email Address is Required in monitor mode");
                 }
+                log.Info("finished checking MontorEmailAddressList");
             }
 
             if (errorMessage.Length > 0)
@@ -224,13 +231,17 @@ namespace JUST.PONotifier
                         }
 
                         if (((Mode == monitor) || (Mode == debug)) &&
-                            (!String.IsNullOrEmpty(MonitorEmailAddress)))
+                            (MonitorEmailAddresses != null && MonitorEmailAddresses.Length > 0))
                         {
-                            if (sendEmail(MonitorEmailAddress, emailSubject, emailBody))
+                            foreach (var emailAddress in MonitorEmailAddresses)
                             {
-                                if (!notifiedlist.Contains(purchaseOrderNumber))
+
+                                if (sendEmail(emailAddress, emailSubject, emailBody))
                                 {
-                                    notifiedlist.Add(purchaseOrderNumber);
+                                    if (!notifiedlist.Contains(purchaseOrderNumber))
+                                    {
+                                        notifiedlist.Add(purchaseOrderNumber);
+                                    }
                                 }
                             }
                         }
@@ -240,7 +251,7 @@ namespace JUST.PONotifier
                 {
                     log.Error("[ProcessPOData] Reader Error: " + x.Message);
                 }
-
+                
                 foreach (var poNum in notifiedlist)
                 {
                     try
@@ -254,7 +265,7 @@ namespace JUST.PONotifier
                         log.Error(String.Format("[ProcessPOData] Error updating PO {0} to be Notified: {1}", poNum, x.Message));
                     }
                 }
-
+                
                 reader.Close();
                 cn.Close();
             }
@@ -353,6 +364,7 @@ namespace JUST.PONotifier
             }
 
             log.Info("  [sendEmail] Sending Email to: " + toEmailAddress);
+
             try
             {
                 using (MailMessage mail = new MailMessage())

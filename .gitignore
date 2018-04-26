@@ -1,0 +1,4 @@
+*.ide-wal
+*.ide-shm
+*.ide
+*.lock

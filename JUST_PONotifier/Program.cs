@@ -64,7 +64,8 @@ namespace JUST.PONotifier
 
         static void Main(string[] args)
         {
-            try {
+            try
+            {
                 log.Info("[Main] Starting up at " + DateTime.Now);
 
                 getConfiguration();
@@ -195,7 +196,7 @@ namespace JUST.PONotifier
                     var receivedOnDateColumn = reader.GetOrdinal("user_3");
                     var vendorNameColumn = reader.GetOrdinal("vendorName");
                     var notesColumn = reader.GetOrdinal("user_6");
-                    
+
                     while (reader.Read())
                     {
                         var purchaseOrderNumber = reader.GetString(poNumColumn);
@@ -214,7 +215,7 @@ namespace JUST.PONotifier
                         var emailSubject = String.Format(EmailSubject, purchaseOrderNumber, vendor);
                         var emailBody = FormatEmailBody(receivedOnDate, purchaseOrderNumber, receivedBy, bin, buyerEmployee.Name, vendor, job, notes);
 
-//                        log.Info("[MONITOR] email message: " + emailBody);
+                        //                        log.Info("[MONITOR] email message: " + emailBody);
                         if ((Mode == live) || (Mode == monitor))
                         {
                             log.Info("[ProcessPOData] Mode: " + Mode.ToString() + ", buyer: " + buyer + ", buyer email:" + buyerEmployee.EmailAddress);
@@ -251,7 +252,7 @@ namespace JUST.PONotifier
                 {
                     log.Error("[ProcessPOData] Reader Error: " + x.Message);
                 }
-                
+
                 foreach (var poNum in notifiedlist)
                 {
                     try
@@ -265,7 +266,7 @@ namespace JUST.PONotifier
                         log.Error(String.Format("[ProcessPOData] Error updating PO {0} to be Notified: {1}", poNum, x.Message));
                     }
                 }
-                
+
                 reader.Close();
                 cn.Close();
             }
@@ -355,7 +356,8 @@ namespace JUST.PONotifier
             }
         }
 
-        private static bool sendEmail(string toEmailAddress, string subject, string emailBody) {
+        private static bool sendEmail(string toEmailAddress, string subject, string emailBody)
+        {
             bool result = true;
             if (toEmailAddress.Length == 0)
             {
@@ -384,7 +386,8 @@ namespace JUST.PONotifier
                     }
                 }
             }
-            catch (Exception x) {
+            catch (Exception x)
+            {
                 result = false;
                 log.Error(String.Format("  [sendEmail] Error Sending email to {0}, message: {1}", x.Message, emailBody));
             }

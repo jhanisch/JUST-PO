@@ -1,0 +1,7 @@
+*.ide-wal
+*.ide-shm
+*.ide
+*.lock
+JUST_PONotifier/obj/*
+JUST_PONotifier/bin/*
+JUST_PONotifier/Properties/*

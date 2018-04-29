@@ -2,4 +2,6 @@
 *.ide-shm
 *.ide
 *.lock
-JUST_PONotifier/obj/x86/Debug/TemporaryGeneratedFile_036C0B5B-1481-4323-8D20-8F5ADCB23D92.cs
+JUST_PONotifier/obj/*
+JUST_PONotifier/bin/*
+JUST_PONotifier/Properties/*

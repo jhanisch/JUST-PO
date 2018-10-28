@@ -89,3 +89,4 @@ History
 1.00b - Updates email format to include  Job # and Description, Customer, Vendor, Buyer and PO Detail line items.
 1.02a  - Updated to include Notes column in email.  Changed retrieving item quantity to use icpoitem.outstanding.
 1.03  - Include the ability to email multiple Monitor Email Addresses
+1.04  - Added Work Order Number and Site to email header information

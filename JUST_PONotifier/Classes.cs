@@ -60,15 +60,19 @@ namespace JUST.PONotifier.Classes
             JobName = string.Empty;
             CustomerNumber = string.Empty;
             CustomerName = string.Empty;
+            WorkOrderNumber = string.Empty;
+            WorkOrderSite = string.Empty;
             PurchaseOrderItems = new List<PurchaseOrderItem>();
         }
 
-        public JobInformation(string projectManagerName, string jobNumber, string jobName, string customerNumber)
+        public JobInformation(string projectManagerName, string jobNumber, string jobName, string customerNumber, string workOrderNumber, string workOrderSite)
         {
             ProjectManagerName = projectManagerName;
             JobNumber = jobNumber;
             JobName = jobName;
             CustomerNumber = customerNumber;
+            WorkOrderNumber = workOrderNumber;
+            WorkOrderSite = workOrderSite;
             PurchaseOrderItems = new List<PurchaseOrderItem>();
         }
 
@@ -77,6 +81,8 @@ namespace JUST.PONotifier.Classes
         public string JobName { get; set; }
         public string CustomerNumber { get; set; }
         public string CustomerName { get; set; }
+        public string WorkOrderNumber { get; set; }
+        public string WorkOrderSite { get; set; }
         public IList<PurchaseOrderItem> PurchaseOrderItems { get; set; }
     }
 }

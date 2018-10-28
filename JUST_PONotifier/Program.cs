@@ -43,10 +43,11 @@ namespace JUST.PONotifier
         Received Date: {2}<br/>
         Located in bin: {3}<br />
         Job #{4}   {5}<br/>
-        Customer: {6}<br/>
-        Vendor Name: {7}<br/>
-        Buyer: {8}<br/>
-        Notes: {9}<br/>
+        Workorder: {6}   {7}<br/>
+        Customer: {8}<br/>
+        Vendor Name: {0}<br/>
+        Buyer: {10}<br/>
+        Notes: {11}<br/>
 
         <table style = ""width:50%; text-align: left"" border=""1"" cellpadding=""10"" cellspacing=""0"">
             <tr style = ""background-color: cyan"" >
@@ -171,7 +172,7 @@ namespace JUST.PONotifier
                 // user_3 = Received Date
                 // user_4 = Bin Cleared Date
                 // user_5 = Notified
-                POQuery = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3, icpo.user_4, icpo.user_5, icpo.defaultjobnum, vendor.name as vendorName, icpo.user_6 from icpo inner join vendor on vendor.vennum = icpo.vennum where icpo.user_3 is not null and icpo.user_5 = 0 order by icpo.ponum asc";
+                POQuery = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3, icpo.user_4, icpo.user_5, icpo.defaultjobnum, vendor.name as vendorName, icpo.user_6, icpo.defaultworkorder from icpo inner join vendor on vendor.vennum = icpo.vennum where icpo.user_3 is not null and icpo.user_5 = 0 order by icpo.ponum asc";
 
                 OdbcConnectionStringBuilder just = new OdbcConnectionStringBuilder();
                 just.Driver = "ComputerEase";
@@ -196,6 +197,7 @@ namespace JUST.PONotifier
                     var receivedOnDateColumn = reader.GetOrdinal("user_3");
                     var vendorNameColumn = reader.GetOrdinal("vendorName");
                     var notesColumn = reader.GetOrdinal("user_6");
+                    var workOrderNumberColumn = reader.GetOrdinal("defaultworkorder");
 
                     while (reader.Read())
                     {
@@ -206,7 +208,8 @@ namespace JUST.PONotifier
                         var buyer = reader.GetString(buyerColumn).ToLower();
                         var vendor = reader.GetString(vendorNameColumn);
                         var notes = reader.GetString(notesColumn);
-                        var job = GetEmailBodyInformation(cn, reader.GetString(jobNumberColumn), purchaseOrderNumber);
+                        var workOrderNumber = reader.GetString(workOrderNumberColumn);
+                        var job = GetEmailBodyInformation(cn, reader.GetString(jobNumberColumn), purchaseOrderNumber, workOrderNumber);
                         var buyerEmployee = GetEmployeeInformation(EmployeeEmailAddresses, buyer);
                         var projectManagerEmployee = job.ProjectManagerName.Length > 0 ? GetEmployeeInformation(EmployeeEmailAddresses, job.ProjectManagerName) : new Employee();
 
@@ -215,7 +218,7 @@ namespace JUST.PONotifier
                         var emailSubject = String.Format(EmailSubject, purchaseOrderNumber, vendor);
                         var emailBody = FormatEmailBody(receivedOnDate, purchaseOrderNumber, receivedBy, bin, buyerEmployee.Name, vendor, job, notes);
 
-                        //                        log.Info("[MONITOR] email message: " + emailBody);
+                        log.Info("[MONITOR] email message: " + emailBody);
                         if ((Mode == live) || (Mode == monitor))
                         {
                             log.Info("[ProcessPOData] Mode: " + Mode.ToString() + ", buyer: " + buyer + ", buyer email:" + buyerEmployee.EmailAddress);
@@ -328,7 +331,7 @@ namespace JUST.PONotifier
                 purchaseOrderItemTable += string.Format(messageBodyTableItem, poItem.ItemNumber, poItem.Description, poItem.Quantity);
             }
 
-            var emailBody = String.Format(MessageBodyFormat2, purchaseOrderNumber, receivedBy, receivedOnDate, bin, job.JobNumber, job.JobName, job.CustomerName, vendor, buyerName, notes) + purchaseOrderItemTable + messageBodyTail;
+            var emailBody = String.Format(MessageBodyFormat2, purchaseOrderNumber, receivedBy, receivedOnDate, bin, job.JobNumber, job.JobName, job.WorkOrderNumber, job.WorkOrderSite, job.CustomerName, vendor, buyerName, notes) + purchaseOrderItemTable + messageBodyTail;
 
             return emailBody;
         }
@@ -421,7 +424,7 @@ namespace JUST.PONotifier
             return employees;
         }
 
-        private static JobInformation GetEmailBodyInformation(OdbcConnection cn, string jobNum, string purchaseOrderNumber)
+        private static JobInformation GetEmailBodyInformation(OdbcConnection cn, string jobNum, string purchaseOrderNumber, string workOrderNumber)
         {
             // from the jcjob table (Company 0)
             // user_1 = job description
@@ -456,6 +459,28 @@ namespace JUST.PONotifier
             }
 
             jobReader.Close();
+
+            if (workOrderNumber.Trim().Length > 0)
+            {
+                var workOrderQuery = "Select dporder.workorder, dpsite.name from dporder inner join dpsite on dpsite.sitenum = dporder.sitenum where workorder = '{0}'";
+                var workOrderCmd = new OdbcCommand(string.Format(workOrderQuery, workOrderNumber), cn);
+                var workOrderResult = new JobInformation();
+
+                OdbcDataReader workOrderReader = workOrderCmd.ExecuteReader();
+
+                if (workOrderReader.Read())
+                {
+                    result.WorkOrderNumber = workOrderReader.GetString(0);
+                    result.WorkOrderSite = workOrderReader.GetString(1);
+                    log.Info(string.Format("  [GetEmailBodyInformation] INFO: Work Order Number {0} found, Site {1}", workOrderNumber, result.WorkOrderSite));
+                }
+                else
+                {
+                    log.Info(string.Format("  [GetEmailBodyInformation] INFO: Work Order Number (ponum) {0} not found in work order", workOrderNumber));
+                }
+
+                workOrderReader.Close();
+            }
 
             var poIitemQuery = "Select icpoitem.itemnum, icpoitem.des, icpoitem.outstanding, icpoitem.unitprice from icpoitem where ponum = '{0}' order by icpoitem.itemnum asc";
             var poItemCmd = new OdbcCommand(string.Format(poIitemQuery, purchaseOrderNumber), cn);

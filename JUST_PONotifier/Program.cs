@@ -45,7 +45,7 @@ namespace JUST.PONotifier
         Job #{4}   {5}<br/>
         Workorder: {6}   {7}<br/>
         Customer: {8}<br/>
-        Vendor Name: {0}<br/>
+        Vendor Name: {9}<br/>
         Buyer: {10}<br/>
         Notes: {11}<br/>
 

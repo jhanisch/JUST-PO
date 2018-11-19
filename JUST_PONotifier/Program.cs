@@ -9,7 +9,8 @@ using System.Linq;
 using System.Net;
 using System.Net.Mail;
 using System.Text;
-using JUST.PONotifier.Classes;
+using JUST_PONotifier.Queries;
+using JUST_PONotifier.Classes;
 
 namespace JUST.PONotifier
 {
@@ -30,6 +31,7 @@ namespace JUST.PONotifier
         private static string Mode;
         private static string[] MonitorEmailAddresses;
         private static ArrayList ValidModes = new ArrayList() { debug, live, monitor };
+        private static string AttachmentBasePath;
 
         private static string EmailSubject = "Purchase Order {0} Received from {1}";
         private static string MessageBodyFormat = "<h2>Purchase Order {0} Received</h2><br><h3>Purchase Order {0} has been received by {1} and has been placed in bin {2}</h3>";
@@ -98,6 +100,8 @@ namespace JUST.PONotifier
                 MonitorEmailAddresses = MonitorEmailAddressList.Split(delimiterChars);
             }
 
+            AttachmentBasePath = ConfigurationManager.AppSettings["AttachmentBasePath"];
+
             #region Validate Configuration Data
             var errorMessage = new StringBuilder();
             if (String.IsNullOrEmpty(Uid))
@@ -150,6 +154,11 @@ namespace JUST.PONotifier
                 log.Info("finished checking MontorEmailAddressList");
             }
 
+            if (String.IsNullOrEmpty(AttachmentBasePath))
+            {
+                errorMessage.Append("Root Path to Attachments (AttachmentBasePath) is Required");
+            }
+
             if (errorMessage.Length > 0)
             {
                 throw new Exception(errorMessage.ToString());
@@ -172,7 +181,8 @@ namespace JUST.PONotifier
                 // user_3 = Received Date
                 // user_4 = Bin Cleared Date
                 // user_5 = Notified
-                POQuery = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3, icpo.user_4, icpo.user_5, icpo.defaultjobnum, vendor.name as vendorName, icpo.user_6, icpo.defaultworkorder from icpo inner join vendor on vendor.vennum = icpo.vennum where icpo.user_3 is not null and icpo.user_5 = 0 order by icpo.ponum asc";
+                POQuery = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3, icpo.user_4, icpo.user_5, icpo.defaultjobnum, vendor.name as vendorName, icpo.user_6, icpo.defaultworkorder, icpo.attachid from icpo inner join vendor on vendor.vennum = icpo.vennum where icpo.user_3 is not null and icpo.user_5 = 0 order by icpo.ponum asc";
+POQuery = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3, icpo.user_4, icpo.user_5, icpo.defaultjobnum, vendor.name as vendorName, icpo.user_6, icpo.defaultworkorder, icpo.attachid from icpo inner join vendor on vendor.vennum = icpo.vennum where icpo.user_3 is not null and icpo.user_5 = 0 and icpo.ponum='19114' order by icpo.ponum asc";
 
                 OdbcConnectionStringBuilder just = new OdbcConnectionStringBuilder();
                 just.Driver = "ComputerEase";
@@ -184,6 +194,7 @@ namespace JUST.PONotifier
                 cmd = new OdbcCommand(POQuery, cn);
                 cn.Open();
                 log.Info("[ProcessPOData] Connection to database opened successfully");
+                var queries = new DatabaseQueries(cn, log);
 
                 OdbcDataReader reader = cmd.ExecuteReader();
                 try
@@ -198,6 +209,7 @@ namespace JUST.PONotifier
                     var vendorNameColumn = reader.GetOrdinal("vendorName");
                     var notesColumn = reader.GetOrdinal("user_6");
                     var workOrderNumberColumn = reader.GetOrdinal("defaultworkorder");
+                    var attachmentIdColumn = reader.GetOrdinal("attachid");
 
                     while (reader.Read())
                     {
@@ -209,24 +221,27 @@ namespace JUST.PONotifier
                         var vendor = reader.GetString(vendorNameColumn);
                         var notes = reader.GetString(notesColumn);
                         var workOrderNumber = reader.GetString(workOrderNumberColumn);
-                        var job = GetEmailBodyInformation(cn, reader.GetString(jobNumberColumn), purchaseOrderNumber, workOrderNumber);
+                        var attachmentId = reader.GetString(attachmentIdColumn);
+                        var job = queries.GetEmailBodyInformation(reader.GetString(jobNumberColumn), purchaseOrderNumber, workOrderNumber);
                         var buyerEmployee = GetEmployeeInformation(EmployeeEmailAddresses, buyer);
                         var projectManagerEmployee = job.ProjectManagerName.Length > 0 ? GetEmployeeInformation(EmployeeEmailAddresses, job.ProjectManagerName) : new Employee();
+                        var attachments = queries.GetAttachmentsForPO(attachmentId, AttachmentBasePath);
 
                         log.Info("[ProcessPOData] ----------------- Found PO Number " + purchaseOrderNumber + " -------------------");
 
                         var emailSubject = String.Format(EmailSubject, purchaseOrderNumber, vendor);
                         var emailBody = FormatEmailBody(receivedOnDate, purchaseOrderNumber, receivedBy, bin, buyerEmployee.Name, vendor, job, notes);
+                        var poAttachments = queries.GetAttachmentsForPO(attachmentId, string.Empty);
 
                         log.Info("[MONITOR] email message: " + emailBody);
                         if ((Mode == live) || (Mode == monitor))
                         {
                             log.Info("[ProcessPOData] Mode: " + Mode.ToString() + ", buyer: " + buyer + ", buyer email:" + buyerEmployee.EmailAddress);
 
-                            NotifyEmployee(notifiedlist, purchaseOrderNumber, buyerEmployee.EmailAddress, receivedBy, bin, emailSubject, emailBody);
+                            NotifyEmployee(notifiedlist, purchaseOrderNumber, buyerEmployee.EmailAddress, receivedBy, bin, emailSubject, emailBody, poAttachments);
                             if (projectManagerEmployee.EmailAddress.Length > 0 && buyerEmployee.EmailAddress != projectManagerEmployee.EmailAddress)
                             {
-                                NotifyEmployee(notifiedlist, purchaseOrderNumber, projectManagerEmployee.EmailAddress, receivedBy, bin, emailSubject, emailBody);
+                                NotifyEmployee(notifiedlist, purchaseOrderNumber, projectManagerEmployee.EmailAddress, receivedBy, bin, emailSubject, emailBody, poAttachments);
                             }
                         }
                         else
@@ -240,7 +255,7 @@ namespace JUST.PONotifier
                             foreach (var emailAddress in MonitorEmailAddresses)
                             {
 
-                                if (sendEmail(emailAddress, emailSubject, emailBody))
+                                if (sendEmail(emailAddress, emailSubject, emailBody, poAttachments))
                                 {
                                     if (!notifiedlist.Contains(purchaseOrderNumber))
                                     {
@@ -336,14 +351,14 @@ namespace JUST.PONotifier
             return emailBody;
         }
 
-        private static void NotifyEmployee(ArrayList notifiedlist, string poNum, string employeeEmailAddress, string receivedBy, string bin, string emailSubject, string emailBody)
+        private static void NotifyEmployee(ArrayList notifiedlist, string poNum, string employeeEmailAddress, string receivedBy, string bin, string emailSubject, string emailBody, List<Attachment> poAttachments)
         {
             try
             {
                 if (employeeEmailAddress.Length > 0)
                 {
                     log.Info("  [NotifyEmployee]   sending email to: " + employeeEmailAddress);
-                    if (sendEmail(employeeEmailAddress, emailSubject, emailBody))
+                    if (sendEmail(employeeEmailAddress, emailSubject, emailBody, poAttachments))
                     {
                         notifiedlist.Add(poNum);
                     }
@@ -359,9 +374,10 @@ namespace JUST.PONotifier
             }
         }
 
-        private static bool sendEmail(string toEmailAddress, string subject, string emailBody)
+        private static bool sendEmail(string toEmailAddress, string subject, string emailBody, List<Attachment> poAttachments)
         {
             bool result = true;
+
             if (toEmailAddress.Length == 0)
             {
                 log.Error("  [sendEmail] No toEmailAddress to send message to");
@@ -379,6 +395,11 @@ namespace JUST.PONotifier
                     mail.Subject = subject;
                     mail.Body = emailBody;
                     mail.IsBodyHtml = true;
+
+                    foreach(Attachment poAttachment in poAttachments)
+                    {
+                        mail.Attachments.Add(poAttachment);
+                    }
 
                     using (SmtpClient smtp = new SmtpClient(FromEmailSMTP, FromEmailPort.Value))
                     {
@@ -423,7 +444,7 @@ namespace JUST.PONotifier
 
             return employees;
         }
-
+/*
         private static JobInformation GetEmailBodyInformation(OdbcConnection cn, string jobNum, string purchaseOrderNumber, string workOrderNumber)
         {
             // from the jcjob table (Company 0)
@@ -493,6 +514,7 @@ namespace JUST.PONotifier
 
             return result;
         }
+        */
     }
 }
 /*

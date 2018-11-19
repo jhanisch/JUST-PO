@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace JUST.PONotifier.Classes
+namespace JUST_PONotifier.Classes
 {
 
     public class Employee
@@ -24,6 +24,64 @@ namespace JUST.PONotifier.Classes
         public string Name { get; set; }
         public string EmailAddress { get; set; }
     }
+
+    public class PurchaseOrder
+    {
+        public PurchaseOrder()
+        {
+            PurchaseOrderNumber = String.Empty;
+            ReceivedBy = String.Empty;
+            Bin = String.Empty;
+            ReceivedOnDate = String.Empty;
+            Buyer = String.Empty;
+            Vendor = String.Empty;
+            Notes = String.Empty;
+            WorkOrderNumber = String.Empty;
+            AttachmentId = String.Empty;
+            BuyerEmployee = String.Empty;
+            ProjectManagerEmployee = String.Empty;
+        }
+
+        public PurchaseOrder (
+                string purchaseOrderNumber,
+                string receivedBy,
+                string bin,
+                string receivedOnDate,
+                string buyer,
+                string vendor,
+                string notes,
+                string workOrderNumber,
+                string attachmentId,
+                string buyerEmployee,
+                string projectManagerEmployee
+            )
+        {
+            PurchaseOrderNumber = purchaseOrderNumber;
+            ReceivedBy = receivedBy;
+            Bin = bin;
+            ReceivedOnDate = receivedOnDate;
+            Buyer = buyer;
+            Vendor = vendor;
+            Notes = notes;
+            WorkOrderNumber = workOrderNumber;
+            AttachmentId = attachmentId;
+            BuyerEmployee = buyerEmployee;
+            ProjectManagerEmployee = projectManagerEmployee;
+        }
+
+        public string PurchaseOrderNumber { get; set; }
+        public string ReceivedBy { get; set; }
+        public string Bin { get; set; }
+        public string ReceivedOnDate { get; set; }
+        public string Buyer { get; set; }
+        public string Vendor { get; set; }
+        public string Notes { get; set; }
+        public string WorkOrderNumber { get; set; }
+        public string AttachmentId { get; set; }
+        public string BuyerEmployee { get; set; }
+        public string ProjectManagerEmployee { get; set; }
+    }
+
 
     public class PurchaseOrderItem
     {

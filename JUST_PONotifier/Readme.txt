@@ -91,3 +91,4 @@ History
 1.03  - Include the ability to email multiple Monitor Email Addresses
 1.0.3.0  - Added Work Order Number and Site to email header information
 1.0.3.1  - Fix Customer name in email header info
+1.0.4.0  - Include attachments with emails

@@ -14,6 +14,7 @@ namespace JUST_PONotifier.Queries
         private OdbcConnection dbConnection;
         private log4net.ILog log;
         private string POAttachmentsRootPath;
+        private List<Employee> Employees = new List<Employee>();
 
         public DatabaseQueries()
         { }
@@ -23,6 +24,7 @@ namespace JUST_PONotifier.Queries
             dbConnection = cn;
             log = x;
             POAttachmentsRootPath = poAttachmentsRootPath;
+            Employees = GetEmployees();
         }
 
         public List<Attachment> GetAttachmentsForPO(string attachid)
@@ -142,6 +144,42 @@ namespace JUST_PONotifier.Queries
             return result;
         }
 
+        public List<Employee> GetEmployees()
+        {
+            if (Employees.Count > 0)
+            {
+                return Employees;
+            }
+
+            if (dbConnection == null)
+            {
+                throw new Exception("GetEmployees - No Database Connection");
+            }
+
+            var employees = new List<Employee>();
+
+            var query = "Select user_1, user_2, name from premployee where user_1 is not null";
+            var cmd = new OdbcCommand(query, dbConnection);
+
+            OdbcDataReader buyerReader = cmd.ExecuteReader();
+
+            while (buyerReader.Read())
+            {
+                var buyer = buyerReader.GetString(0);
+                var email = buyerReader.GetString(1);
+                var name = buyerReader.GetString(2);
+
+                if (buyer.Trim().Length > 0)
+                {
+                    employees.Add(new Employee(buyer, name, email));
+                }
+            }
+
+            buyerReader.Close();
+
+            return employees;
+        }
+
         public List<PurchaseOrder> GetPurchaseOrdersToNotify()
         {
             if (dbConnection == null)
@@ -151,7 +189,6 @@ namespace JUST_PONotifier.Queries
 
             List<PurchaseOrder> pos = new List<PurchaseOrder>();
             var POQuery = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3, icpo.user_4, icpo.user_5, icpo.defaultjobnum, vendor.name as vendorName, icpo.user_6, icpo.defaultworkorder, icpo.attachid from icpo inner join vendor on vendor.vennum = icpo.vennum where icpo.user_3 is not null and icpo.user_5 = 0 order by icpo.ponum asc";
-            POQuery = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3, icpo.user_4, icpo.user_5, icpo.defaultjobnum, vendor.name as vendorName, icpo.user_6, icpo.defaultworkorder, icpo.attachid from icpo inner join vendor on vendor.vennum = icpo.vennum where icpo.user_3 is not null and icpo.ponum = '19144' order by icpo.ponum asc";
             var cmd = new OdbcCommand(POQuery, dbConnection);
             var reader = cmd.ExecuteReader();
 
@@ -185,6 +222,8 @@ namespace JUST_PONotifier.Queries
 
                 pos.Add(new PurchaseOrder(purchaseOrderNumber, receivedBy, bin, receivedOnDate, buyer, vendor, notes, workOrderNumber, string.Empty, string.Empty, jobNumber, attachments));
             }
+
+            reader.Close();
 
             return pos;
         }

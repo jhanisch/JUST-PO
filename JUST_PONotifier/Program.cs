@@ -205,16 +205,52 @@ POQuery = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3,
                     foreach(PurchaseOrder po in purchaseOrdersToNotify)
                     {
                         var job = queries.GetEmailBodyInformation(po.JobNumber, po.PurchaseOrderNumber, po.WorkOrderNumber);
-//                        var buyerEmployee = GetEmployeeInformation(EmployeeEmailAddresses, po.Buyer);
-//                        var projectManagerEmployee = job.ProjectManagerName.Length > 0 ? GetEmployeeInformation(EmployeeEmailAddresses, job.ProjectManagerName) : new Employee();
+                        var buyerEmployee = GetEmployeeInformation(queries.GetEmployees(), po.Buyer);
+                        var projectManagerEmployee = job.ProjectManagerName.Length > 0 ? GetEmployeeInformation(queries.GetEmployees(), job.ProjectManagerName) : new Employee();
 
+                        log.Info("[ProcessPOData] ----------------- Found PO Number " + po.PurchaseOrderNumber + " -------------------");
+
+                        var emailSubject = String.Format(EmailSubject, po.PurchaseOrderNumber, po.Vendor);
+                        var emailBody = FormatEmailBody(po.ReceivedOnDate, po.PurchaseOrderNumber, po.ReceivedBy, po.Bin, buyerEmployee.Name, po.Vendor, job, po.Notes);
+
+                        log.Info("[MONITOR] email message: " + emailBody);
+                        if ((Mode == live) || (Mode == monitor))
+                        {
+                            log.Info("[ProcessPOData] Mode: " + Mode.ToString() + ", buyer: " + po.Buyer + ", buyer email:" + buyerEmployee.EmailAddress);
+
+                            NotifyEmployee(notifiedlist, po.PurchaseOrderNumber, buyerEmployee.EmailAddress, po.ReceivedBy, po.Bin, emailSubject, emailBody, po.Attachments);
+                            if (projectManagerEmployee.EmailAddress.Length > 0 && buyerEmployee.EmailAddress != projectManagerEmployee.EmailAddress)
+                            {
+                                NotifyEmployee(notifiedlist, po.PurchaseOrderNumber, projectManagerEmployee.EmailAddress, po.ReceivedBy, po.Bin, emailSubject, emailBody, po.Attachments);
+                            }
+                        }
+                        else
+                        {
+                            log.Info("[ProcessPOData] Debug: Notification email would have been sent to buyer: " + po.Buyer + " and/or Project Manager: " + job.ProjectManagerName);
+                        }
+
+                        if (((Mode == monitor) || (Mode == debug)) &&
+                            (MonitorEmailAddresses != null && MonitorEmailAddresses.Length > 0))
+                        {
+                            foreach (var emailAddress in MonitorEmailAddresses)
+                            {
+
+                                if (sendEmail(emailAddress, emailSubject, emailBody, po.Attachments))
+                                {
+                                    if (!notifiedlist.Contains(po.PurchaseOrderNumber))
+                                    {
+                                        notifiedlist.Add(po.PurchaseOrderNumber);
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
                 catch (Exception ex)
                 {
                     log.Info(ex.Message);
                 }
-                
+/*                
                 OdbcDataReader reader = cmd.ExecuteReader();
                 try
                 {
@@ -288,7 +324,7 @@ POQuery = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3,
                 {
                     log.Error("[ProcessPOData] Reader Error: " + x.Message);
                 }
-
+                */
                 foreach (var poNum in notifiedlist)
                 {
                     try
@@ -303,7 +339,7 @@ POQuery = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3,
                     }
                 }
 
-                reader.Close();
+//                reader.Close();
                 cn.Close();
             }
             catch (Exception x)
@@ -436,7 +472,7 @@ POQuery = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3,
 
             return result;
         }
-
+        /*
         private static List<Employee> GetEmployees(OdbcConnection cn)
         {
             var employees = new List<Employee>();
@@ -462,6 +498,7 @@ POQuery = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3,
 
             return employees;
         }
+        */
 /*
         private static JobInformation GetEmailBodyInformation(OdbcConnection cn, string jobNum, string purchaseOrderNumber, string workOrderNumber)
         {

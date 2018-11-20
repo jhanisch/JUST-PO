@@ -13,31 +13,39 @@ namespace JUST_PONotifier.Queries
     {
         private OdbcConnection dbConnection;
         private log4net.ILog log;
+        private string POAttachmentsRootPath;
 
         public DatabaseQueries()
         { }
 
-        public DatabaseQueries(OdbcConnection cn, log4net.ILog x)
+        public DatabaseQueries(OdbcConnection cn, log4net.ILog x, string poAttachmentsRootPath)
         {
             dbConnection = cn;
             log = x;
+            POAttachmentsRootPath = poAttachmentsRootPath;
         }
 
-        public List<Attachment> GetAttachmentsForPO(string attachid, string rootPath)
+        public List<Attachment> GetAttachmentsForPO(string attachid)
         {
-            return GetAttachmentsForPO(dbConnection, attachid, rootPath);
+            return GetAttachmentsForPO(dbConnection, attachid);
         }
 
-        private List<Attachment> GetAttachmentsForPO(OdbcConnection cn, string attachid, string rootPath)
-        {  
+        private List<Attachment> GetAttachmentsForPO(OdbcConnection cn, string attachid)
+        {
+            List<Attachment> poAttachments = new List<Attachment>();
+
             if (cn == null)
             {
                 throw new Exception("No Database connection exists");
             }
 
-            List<Attachment> poAttachments = new List<Attachment>();
+            if (attachid.Trim().Length == 0)
+            {
+                log.Info("GetAttachmentsForPO, attachid is empty");
+                return poAttachments;
+            }
 
-            var attachmentQuery = "Select path, displayname from icpoattachment where ownerkey = '{0}'";
+            var attachmentQuery = "Select path, displayname from icpoattachment where ownerkey = {0}";
             var attachmentCmd = new OdbcCommand(string.Format(attachmentQuery, attachid), cn);
 
             OdbcDataReader attachmentReader = attachmentCmd.ExecuteReader();
@@ -49,7 +57,7 @@ namespace JUST_PONotifier.Queries
 
                 if (path.Trim().Length > 0)
                 {
-                    var fullPath = rootPath + path;
+                    var fullPath = POAttachmentsRootPath + path;
                     poAttachments.Add(new Attachment(fullPath));
                 }
             }
@@ -84,7 +92,7 @@ namespace JUST_PONotifier.Queries
             var result = new JobInformation();
             result.JobNumber = jobNum;
 
-            OdbcDataReader jobReader = jobCmd.ExecuteReader();
+            var jobReader = jobCmd.ExecuteReader();
 
             if (jobReader.Read())
             {
@@ -134,9 +142,49 @@ namespace JUST_PONotifier.Queries
             return result;
         }
 
-        public List<PurchaseOrder> GetUnNotifiedPurchaseOrders()
+        public List<PurchaseOrder> GetPurchaseOrdersToNotify()
         {
+            if (dbConnection == null)
+            {
+                throw new Exception("GetPurchasOrdersToNotify - No Database Connection");
+            }
+
             List<PurchaseOrder> pos = new List<PurchaseOrder>();
+            var POQuery = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3, icpo.user_4, icpo.user_5, icpo.defaultjobnum, vendor.name as vendorName, icpo.user_6, icpo.defaultworkorder, icpo.attachid from icpo inner join vendor on vendor.vennum = icpo.vennum where icpo.user_3 is not null and icpo.user_5 = 0 order by icpo.ponum asc";
+            POQuery = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3, icpo.user_4, icpo.user_5, icpo.defaultjobnum, vendor.name as vendorName, icpo.user_6, icpo.defaultworkorder, icpo.attachid from icpo inner join vendor on vendor.vennum = icpo.vennum where icpo.user_3 is not null and icpo.ponum = '19144' order by icpo.ponum asc";
+            var cmd = new OdbcCommand(POQuery, dbConnection);
+            var reader = cmd.ExecuteReader();
+
+            var buyerColumn = reader.GetOrdinal("buyer");
+            var poNumColumn = reader.GetOrdinal("ponum");
+            var jobNumberColumn = reader.GetOrdinal("defaultjobnum");
+            var binColumn = reader.GetOrdinal("user_1");
+            var receivedByColumn = reader.GetOrdinal("user_2");
+            var receivedOnDateColumn = reader.GetOrdinal("user_3");
+            var vendorNameColumn = reader.GetOrdinal("vendorName");
+            var notesColumn = reader.GetOrdinal("user_6");
+            var workOrderNumberColumn = reader.GetOrdinal("defaultworkorder");
+            var attachmentIdColumn = reader.GetOrdinal("attachid");
+
+            while (reader.Read())
+            {
+                var purchaseOrderNumber = reader.GetString(poNumColumn);
+                var receivedBy = reader.GetString(receivedByColumn);
+                var bin = reader.GetString(binColumn);
+                var receivedOnDate = reader.GetDate(receivedOnDateColumn).ToShortDateString();
+                var buyer = reader.GetString(buyerColumn).ToLower();
+                var vendor = reader.GetString(vendorNameColumn);
+                var notes = reader.GetString(notesColumn);
+                var workOrderNumber = reader.GetString(workOrderNumberColumn);
+                var jobNumber = reader.GetString(jobNumberColumn);
+                var attachmentId = reader.GetString(attachmentIdColumn);
+                //                    var job = queries.GetEmailBodyInformation(reader.GetString(jobNumberColumn), purchaseOrderNumber, workOrderNumber);
+                //                    var buyerEmployee = GetEmployeeInformation(EmployeeEmailAddresses, buyer);
+                //                    var projectManagerEmployee = job.ProjectManagerName.Length > 0 ? GetEmployeeInformation(EmployeeEmailAddresses, job.ProjectManagerName) : new Employee();
+                var attachments = GetAttachmentsForPO(attachmentId);
+
+                pos.Add(new PurchaseOrder(purchaseOrderNumber, receivedBy, bin, receivedOnDate, buyer, vendor, notes, workOrderNumber, string.Empty, string.Empty, jobNumber, attachments));
+            }
 
             return pos;
         }

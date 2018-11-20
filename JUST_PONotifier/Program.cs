@@ -12,7 +12,7 @@ using System.Text;
 using JUST_PONotifier.Queries;
 using JUST_PONotifier.Classes;
 
-namespace JUST.PONotifier
+namespace JUST_PONotifier
 {
     class MainClass
     {
@@ -31,7 +31,7 @@ namespace JUST.PONotifier
         private static string Mode;
         private static string[] MonitorEmailAddresses;
         private static ArrayList ValidModes = new ArrayList() { debug, live, monitor };
-        private static string AttachmentBasePath;
+        private static string POAttachmentBasePath;
 
         private static string EmailSubject = "Purchase Order {0} Received from {1}";
         private static string MessageBodyFormat = "<h2>Purchase Order {0} Received</h2><br><h3>Purchase Order {0} has been received by {1} and has been placed in bin {2}</h3>";
@@ -100,7 +100,7 @@ namespace JUST.PONotifier
                 MonitorEmailAddresses = MonitorEmailAddressList.Split(delimiterChars);
             }
 
-            AttachmentBasePath = ConfigurationManager.AppSettings["AttachmentBasePath"];
+            POAttachmentBasePath = ConfigurationManager.AppSettings["POAttachmentBasePath"];
 
             #region Validate Configuration Data
             var errorMessage = new StringBuilder();
@@ -154,7 +154,7 @@ namespace JUST.PONotifier
                 log.Info("finished checking MontorEmailAddressList");
             }
 
-            if (String.IsNullOrEmpty(AttachmentBasePath))
+            if (String.IsNullOrEmpty(POAttachmentBasePath))
             {
                 errorMessage.Append("Root Path to Attachments (AttachmentBasePath) is Required");
             }
@@ -182,7 +182,7 @@ namespace JUST.PONotifier
                 // user_4 = Bin Cleared Date
                 // user_5 = Notified
                 POQuery = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3, icpo.user_4, icpo.user_5, icpo.defaultjobnum, vendor.name as vendorName, icpo.user_6, icpo.defaultworkorder, icpo.attachid from icpo inner join vendor on vendor.vennum = icpo.vennum where icpo.user_3 is not null and icpo.user_5 = 0 order by icpo.ponum asc";
-POQuery = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3, icpo.user_4, icpo.user_5, icpo.defaultjobnum, vendor.name as vendorName, icpo.user_6, icpo.defaultworkorder, icpo.attachid from icpo inner join vendor on vendor.vennum = icpo.vennum where icpo.user_3 is not null and icpo.user_5 = 0 and icpo.ponum='19114' order by icpo.ponum asc";
+POQuery = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3, icpo.user_4, icpo.user_5, icpo.defaultjobnum, vendor.name as vendorName, icpo.user_6, icpo.defaultworkorder, icpo.attachid from icpo inner join vendor on vendor.vennum = icpo.vennum where icpo.user_3 is not null and icpo.ponum = '19144' order by icpo.ponum asc";
 
                 OdbcConnectionStringBuilder just = new OdbcConnectionStringBuilder();
                 just.Driver = "ComputerEase";
@@ -194,8 +194,27 @@ POQuery = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3,
                 cmd = new OdbcCommand(POQuery, cn);
                 cn.Open();
                 log.Info("[ProcessPOData] Connection to database opened successfully");
-                var queries = new DatabaseQueries(cn, log);
+                var queries = new DatabaseQueries(cn, log, POAttachmentBasePath);
+                
+                List<PurchaseOrder> purchaseOrdersToNotify;
+                try
+                {
+                    purchaseOrdersToNotify = queries.GetPurchaseOrdersToNotify();
+                    log.Info("purchaseOrdersToNotify found " + purchaseOrdersToNotify.Count.ToString() + " items.");
 
+                    foreach(PurchaseOrder po in purchaseOrdersToNotify)
+                    {
+                        var job = queries.GetEmailBodyInformation(po.JobNumber, po.PurchaseOrderNumber, po.WorkOrderNumber);
+//                        var buyerEmployee = GetEmployeeInformation(EmployeeEmailAddresses, po.Buyer);
+//                        var projectManagerEmployee = job.ProjectManagerName.Length > 0 ? GetEmployeeInformation(EmployeeEmailAddresses, job.ProjectManagerName) : new Employee();
+
+                    }
+                }
+                catch (Exception ex)
+                {
+                    log.Info(ex.Message);
+                }
+                
                 OdbcDataReader reader = cmd.ExecuteReader();
                 try
                 {
@@ -225,23 +244,22 @@ POQuery = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3,
                         var job = queries.GetEmailBodyInformation(reader.GetString(jobNumberColumn), purchaseOrderNumber, workOrderNumber);
                         var buyerEmployee = GetEmployeeInformation(EmployeeEmailAddresses, buyer);
                         var projectManagerEmployee = job.ProjectManagerName.Length > 0 ? GetEmployeeInformation(EmployeeEmailAddresses, job.ProjectManagerName) : new Employee();
-                        var attachments = queries.GetAttachmentsForPO(attachmentId, AttachmentBasePath);
+                        var attachments = queries.GetAttachmentsForPO(attachmentId);
 
                         log.Info("[ProcessPOData] ----------------- Found PO Number " + purchaseOrderNumber + " -------------------");
 
                         var emailSubject = String.Format(EmailSubject, purchaseOrderNumber, vendor);
                         var emailBody = FormatEmailBody(receivedOnDate, purchaseOrderNumber, receivedBy, bin, buyerEmployee.Name, vendor, job, notes);
-                        var poAttachments = queries.GetAttachmentsForPO(attachmentId, string.Empty);
 
                         log.Info("[MONITOR] email message: " + emailBody);
                         if ((Mode == live) || (Mode == monitor))
                         {
                             log.Info("[ProcessPOData] Mode: " + Mode.ToString() + ", buyer: " + buyer + ", buyer email:" + buyerEmployee.EmailAddress);
 
-                            NotifyEmployee(notifiedlist, purchaseOrderNumber, buyerEmployee.EmailAddress, receivedBy, bin, emailSubject, emailBody, poAttachments);
+                            NotifyEmployee(notifiedlist, purchaseOrderNumber, buyerEmployee.EmailAddress, receivedBy, bin, emailSubject, emailBody, attachments);
                             if (projectManagerEmployee.EmailAddress.Length > 0 && buyerEmployee.EmailAddress != projectManagerEmployee.EmailAddress)
                             {
-                                NotifyEmployee(notifiedlist, purchaseOrderNumber, projectManagerEmployee.EmailAddress, receivedBy, bin, emailSubject, emailBody, poAttachments);
+                                NotifyEmployee(notifiedlist, purchaseOrderNumber, projectManagerEmployee.EmailAddress, receivedBy, bin, emailSubject, emailBody, attachments);
                             }
                         }
                         else
@@ -255,7 +273,7 @@ POQuery = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3,
                             foreach (var emailAddress in MonitorEmailAddresses)
                             {
 
-                                if (sendEmail(emailAddress, emailSubject, emailBody, poAttachments))
+                                if (sendEmail(emailAddress, emailSubject, emailBody, attachments))
                                 {
                                     if (!notifiedlist.Contains(purchaseOrderNumber))
                                     {

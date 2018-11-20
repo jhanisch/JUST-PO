@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net.Mail;
 using System.Collections.Generic;
 
 namespace JUST_PONotifier.Classes
@@ -37,12 +38,13 @@ namespace JUST_PONotifier.Classes
             Vendor = String.Empty;
             Notes = String.Empty;
             WorkOrderNumber = String.Empty;
-            AttachmentId = String.Empty;
             BuyerEmployee = String.Empty;
             ProjectManagerEmployee = String.Empty;
+            JobNumber = String.Empty;
+            Attachments = new List<Attachment>();
         }
 
-        public PurchaseOrder (
+        public PurchaseOrder(
                 string purchaseOrderNumber,
                 string receivedBy,
                 string bin,
@@ -51,9 +53,10 @@ namespace JUST_PONotifier.Classes
                 string vendor,
                 string notes,
                 string workOrderNumber,
-                string attachmentId,
                 string buyerEmployee,
-                string projectManagerEmployee
+                string projectManagerEmployee,
+                string jobNumber,
+                List<Attachment> attachments
             )
         {
             PurchaseOrderNumber = purchaseOrderNumber;
@@ -64,9 +67,12 @@ namespace JUST_PONotifier.Classes
             Vendor = vendor;
             Notes = notes;
             WorkOrderNumber = workOrderNumber;
-            AttachmentId = attachmentId;
             BuyerEmployee = buyerEmployee;
             ProjectManagerEmployee = projectManagerEmployee;
+            JobNumber = jobNumber;
+
+            Attachments = new List<Attachment>();
+            Attachments.AddRange(attachments);
         }
 
         public string PurchaseOrderNumber { get; set; }
@@ -77,9 +83,10 @@ namespace JUST_PONotifier.Classes
         public string Vendor { get; set; }
         public string Notes { get; set; }
         public string WorkOrderNumber { get; set; }
-        public string AttachmentId { get; set; }
         public string BuyerEmployee { get; set; }
         public string ProjectManagerEmployee { get; set; }
+        public string JobNumber { get; set; }
+        public List<Attachment> Attachments { get; set; }
     }
 
 

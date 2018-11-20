@@ -1,5 +1,3 @@
-C:\Development\JUST-PO\JUST-PO\JUST_PONotifier_Tests\obj\Debug\JUST_PONotifier_Tests.csprojResolveAssemblyReference.cache
-C:\Development\JUST-PO\JUST-PO\JUST_PONotifier_Tests\obj\Debug\JUST_PONotifier_Tests.csproj.CoreCompileInputs.cache
 C:\Development\JUST-PO\JUST-PO\JUST_PONotifier_Tests\bin\Debug\log4net.config
 C:\Development\JUST-PO\JUST-PO\JUST_PONotifier_Tests\bin\Debug\JUST_PONotifier_Tests.dll
 C:\Development\JUST-PO\JUST-PO\JUST_PONotifier_Tests\bin\Debug\JUST_PONotifier_Tests.pdb
@@ -11,5 +9,7 @@ C:\Development\JUST-PO\JUST-PO\JUST_PONotifier_Tests\bin\Debug\JUST_PONotifier.e
 C:\Development\JUST-PO\JUST-PO\JUST_PONotifier_Tests\bin\Debug\nunit.framework.pdb
 C:\Development\JUST-PO\JUST-PO\JUST_PONotifier_Tests\bin\Debug\nunit.framework.xml
 C:\Development\JUST-PO\JUST-PO\JUST_PONotifier_Tests\bin\Debug\log4net.xml
+C:\Development\JUST-PO\JUST-PO\JUST_PONotifier_Tests\obj\Debug\JUST_PONotifier_Tests.csprojResolveAssemblyReference.cache
+C:\Development\JUST-PO\JUST-PO\JUST_PONotifier_Tests\obj\Debug\JUST_PONotifier_Tests.csproj.CoreCompileInputs.cache
 C:\Development\JUST-PO\JUST-PO\JUST_PONotifier_Tests\obj\Debug\JUST_PONotifier_Tests.dll
 C:\Development\JUST-PO\JUST-PO\JUST_PONotifier_Tests\obj\Debug\JUST_PONotifier_Tests.pdb

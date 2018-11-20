@@ -1,12 +1,22 @@
-﻿using NUnit.Framework;
+﻿using JUST_PONotifier.Classes;
+using NUnit.Framework;
 using System;
-using JUST_PONotifier.Classes;
+using System.Collections.Generic;
+using System.Net.Mail;
 
 namespace JUST_PONotifier_Tests
 {
     [TestFixture()]
     public class Tests
     {
+        public List<Attachment> emptyList;
+
+        [SetUp]
+        public void TestSetup()
+        {
+            emptyList = new List<Attachment>();
+        }
+
         #region Classes
         [Test]
         public void Classes_PurchaseOrderExists()
@@ -20,12 +30,12 @@ namespace JUST_PONotifier_Tests
             Assert.AreEqual(String.Empty, newObject.Vendor);
             Assert.AreEqual(String.Empty, newObject.Notes);
             Assert.AreEqual(String.Empty, newObject.WorkOrderNumber);
-            Assert.AreEqual(String.Empty, newObject.AttachmentId);
             Assert.AreEqual(String.Empty, newObject.BuyerEmployee);
             Assert.AreEqual(String.Empty, newObject.ProjectManagerEmployee);
+            Assert.AreEqual(0, newObject.Attachments.Count);
         }
 
-        [TestCase("12345", "Enzo Ferrari", "Bin 123", "01/01/2001", "aaa", "bbb", "asdfasdfasdfasdf", "11111111111111111", "WWWwww\\@!~!{}[]", "!@#$!$#%^&&^*", "ZXCV")]
+        [TestCase("12345", "Enzo Ferrari", "Bin 123", "01/01/2001", "aaa", "bbb", "asdfasdfasdfasdf", "11111111111111111", "WWWwww\\@!~!{}[]", "!@#$!$#%^&&^*", "jobNumber")]
         public void Classes_PurchaseOrderInitializes(
             string poNum, 
             string receivedBy, 
@@ -35,11 +45,12 @@ namespace JUST_PONotifier_Tests
             string vendor,
             string notes,
             string workOrderNumber,
-            string attachmentId,
             string buyerEmployee,
-            string projectManagerEmployee
+            string projectManagerEmployee,
+            string jobNumber
             )
         {
+
             var newObject = new PurchaseOrder(
                 poNum, 
                 receivedBy, 
@@ -49,9 +60,11 @@ namespace JUST_PONotifier_Tests
                 vendor,
                 notes,
                 workOrderNumber,
-                attachmentId,
                 buyerEmployee,
-                projectManagerEmployee);
+                projectManagerEmployee,
+                jobNumber,
+                emptyList
+                );
 
             Assert.AreEqual(poNum, newObject.PurchaseOrderNumber);
             Assert.AreEqual(receivedBy, newObject.ReceivedBy);
@@ -61,10 +74,36 @@ namespace JUST_PONotifier_Tests
             Assert.AreEqual(vendor, newObject.Vendor);
             Assert.AreEqual(notes, newObject.Notes);
             Assert.AreEqual(workOrderNumber, newObject.WorkOrderNumber);
-            Assert.AreEqual(attachmentId, newObject.AttachmentId);
             Assert.AreEqual(buyerEmployee, newObject.BuyerEmployee);
             Assert.AreEqual(projectManagerEmployee, newObject.ProjectManagerEmployee);
+            Assert.AreEqual(jobNumber, newObject.JobNumber);
+            Assert.AreEqual(emptyList.Count, newObject.Attachments.Count);
         }
+
+        [Test]
+        public void Classes_EmployeeExists()
+        {
+            var newObject = new Employee();
+            Assert.AreEqual(String.Empty, newObject.EmployeeId);
+            Assert.AreEqual(String.Empty, newObject.Name);
+            Assert.AreEqual(String.Empty, newObject.EmailAddress);
+        }
+
+        [TestCase("12345", "Enzo Ferrari", "enzo@ferrari.com")]
+        [TestCase("12345", null, "enzo@ferrari.com")]
+        [TestCase("12345", "Enzo Ferrari", null)]
+        public void Classes_EmployeeInitializes(
+            string employeeId,
+            string name,
+            string emailAddress)
+        {
+            var newObject = new Employee(employeeId, name, emailAddress);
+
+            Assert.AreEqual(employeeId, newObject.EmployeeId);
+            Assert.AreEqual(name, newObject.Name);
+            Assert.AreEqual(emailAddress, newObject.EmailAddress);
+        }
+
         #endregion
-    }
+        }
 }

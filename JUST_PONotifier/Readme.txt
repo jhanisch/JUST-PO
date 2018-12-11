@@ -92,3 +92,4 @@ History
 1.0.3.0  - Added Work Order Number and Site to email header information
 1.0.3.1  - Fix Customer name in email header info
 1.0.4.0  - Include attachments with emails
+1.0.4.3  - Fix multiple email issue by adding monitor emails as bcc's

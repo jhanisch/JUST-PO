@@ -202,7 +202,7 @@ POQuery = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3,
                     purchaseOrdersToNotify = queries.GetPurchaseOrdersToNotify();
                     log.Info("purchaseOrdersToNotify found " + purchaseOrdersToNotify.Count.ToString() + " items.");
 
-                    foreach(PurchaseOrder po in purchaseOrdersToNotify)
+                    foreach (PurchaseOrder po in purchaseOrdersToNotify)
                     {
                         var job = queries.GetEmailBodyInformation(po.JobNumber, po.PurchaseOrderNumber, po.WorkOrderNumber);
                         var buyerEmployee = GetEmployeeInformation(queries.GetEmployees(), po.Buyer);
@@ -213,37 +213,68 @@ POQuery = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3,
                         var emailSubject = String.Format(EmailSubject, po.PurchaseOrderNumber, po.Vendor);
                         var emailBody = FormatEmailBody(po.ReceivedOnDate, po.PurchaseOrderNumber, po.ReceivedBy, po.Bin, buyerEmployee.Name, po.Vendor, job, po.Notes);
 
-                        log.Info("[MONITOR] email message: " + emailBody);
+                        ArrayList primaryRecipients = new ArrayList();
+                        ArrayList bccList = new ArrayList();
                         if ((Mode == live) || (Mode == monitor))
                         {
-                            log.Info("[ProcessPOData] Mode: " + Mode.ToString() + ", buyer: " + po.Buyer + ", buyer email:" + buyerEmployee.EmailAddress);
-
-                            NotifyEmployee(notifiedlist, po.PurchaseOrderNumber, buyerEmployee.EmailAddress, po.ReceivedBy, po.Bin, emailSubject, emailBody, po.Attachments);
+                            primaryRecipients.Add(buyerEmployee.EmailAddress);
                             if (projectManagerEmployee.EmailAddress.Length > 0 && buyerEmployee.EmailAddress != projectManagerEmployee.EmailAddress)
                             {
-                                NotifyEmployee(notifiedlist, po.PurchaseOrderNumber, projectManagerEmployee.EmailAddress, po.ReceivedBy, po.Bin, emailSubject, emailBody, po.Attachments);
+                                primaryRecipients.Add(projectManagerEmployee.EmailAddress);
                             }
-                        }
-                        else
-                        {
-                            log.Info("[ProcessPOData] Debug: Notification email would have been sent to buyer: " + po.Buyer + " and/or Project Manager: " + job.ProjectManagerName);
                         }
 
                         if (((Mode == monitor) || (Mode == debug)) &&
                             (MonitorEmailAddresses != null && MonitorEmailAddresses.Length > 0))
                         {
-                            foreach (var emailAddress in MonitorEmailAddresses)
+                            foreach(string monitorEmailAddress in MonitorEmailAddresses)
                             {
-
-                                if (sendEmail(emailAddress, emailSubject, emailBody, po.Attachments))
-                                {
-                                    if (!notifiedlist.Contains(po.PurchaseOrderNumber))
-                                    {
-                                        notifiedlist.Add(po.PurchaseOrderNumber);
-                                    }
-                                }
+                                bccList.Add(monitorEmailAddress);
                             }
                         }
+
+                        if ((primaryRecipients.Count == 0) && (bccList.Count > 0))
+                        {
+                            primaryRecipients.Add(bccList[0]);
+                        }
+
+                        if (sendEmail(primaryRecipients, bccList, emailSubject, emailBody, po.Attachments))
+                        {
+                            notifiedlist.Add(po.PurchaseOrderNumber);
+                        }
+
+                        /*
+                                                log.Info("[MONITOR] email message: " + emailBody);
+                                                if ((Mode == live) || (Mode == monitor))
+                                                {
+                                                    log.Info("[ProcessPOData] Mode: " + Mode.ToString() + ", buyer: " + po.Buyer + ", buyer email:" + buyerEmployee.EmailAddress);
+
+                                                    NotifyEmployee(notifiedlist, po.PurchaseOrderNumber, buyerEmployee.EmailAddress, po.ReceivedBy, po.Bin, emailSubject, emailBody, po.Attachments);
+                                                    if (projectManagerEmployee.EmailAddress.Length > 0 && buyerEmployee.EmailAddress != projectManagerEmployee.EmailAddress)
+                                                    {
+                                                        NotifyEmployee(notifiedlist, po.PurchaseOrderNumber, projectManagerEmployee.EmailAddress, po.ReceivedBy, po.Bin, emailSubject, emailBody, po.Attachments);
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    log.Info("[ProcessPOData] Debug: Notification email would have been sent to buyer: " + po.Buyer + " and/or Project Manager: " + job.ProjectManagerName);
+                                                }
+
+                                                if (((Mode == monitor) || (Mode == debug)) &&
+                                                    (MonitorEmailAddresses != null && MonitorEmailAddresses.Length > 0))
+                                                {
+                                                    foreach (var emailAddress in MonitorEmailAddresses)
+                                                    {
+                                                        if (sendEmail(emailAddress, emailSubject, emailBody, po.Attachments))
+                                                        {
+                                                            if (!notifiedlist.Contains(po.PurchaseOrderNumber))
+                                                            {
+                                                                notifiedlist.Add(po.PurchaseOrderNumber);
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                        */
                     }
                 }
                 catch (Exception ex)
@@ -404,7 +435,7 @@ POQuery = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3,
 
             return emailBody;
         }
-
+/*
         private static void NotifyEmployee(ArrayList notifiedlist, string poNum, string employeeEmailAddress, string receivedBy, string bin, string emailSubject, string emailBody, List<Attachment> poAttachments)
         {
             try
@@ -427,25 +458,38 @@ POQuery = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3,
                 log.Info("  [NotifyEmployee] Error " + ex.Message);
             }
         }
-
-        private static bool sendEmail(string toEmailAddress, string subject, string emailBody, List<Attachment> poAttachments)
+*/
+        private static bool sendEmail(ArrayList toEmailAddresses, ArrayList bccList, string subject, string emailBody, List<Attachment> poAttachments)
         {
             bool result = true;
 
-            if (toEmailAddress.Length == 0)
+            if (toEmailAddresses.Count == 0)
             {
                 log.Error("  [sendEmail] No toEmailAddress to send message to");
                 return false;
             }
 
-            log.Info("  [sendEmail] Sending Email to: " + toEmailAddress);
+            log.Info("  [sendEmail] Sending Email to: " + toEmailAddresses.Count);
+            log.Info("  [sendEmail] subject: " + subject);
+            log.Info("  [sendEmail] attachments: " + poAttachments.Count);
 
             try
             {
                 using (MailMessage mail = new MailMessage())
                 {
                     mail.From = new MailAddress(FromEmailAddress, "PO Notification");
-                    mail.To.Add(toEmailAddress);
+                    foreach (string primaryEmailAddress in toEmailAddresses)
+                    {
+                        mail.To.Add(primaryEmailAddress);
+                        log.Info("  [sendEmail] Sending email to primary address: " + primaryEmailAddress);
+                    }
+
+                    foreach (string bccEmailAddress in bccList)
+                    {
+                        mail.Bcc.Add(bccEmailAddress);
+                        log.Info("  [sendEmail] Sending email to bcc address: " + bccEmailAddress);
+                    }
+
                     mail.Subject = subject;
                     mail.Body = emailBody;
                     mail.IsBodyHtml = true;
@@ -460,14 +504,17 @@ POQuery = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3,
                         smtp.Credentials = new NetworkCredential(FromEmailAddress, FromEmailPassword);
                         smtp.EnableSsl = true;
                         smtp.Send(mail);
-                        log.Info("  [sendEmail] Email Sent to " + toEmailAddress);
+                        log.Info("  [sendEmail] Email Sent successfully");
                     }
+
+                    mail.Attachments.Dispose();
+                    mail.Dispose();
                 }
             }
             catch (Exception x)
             {
                 result = false;
-                log.Error(String.Format("  [sendEmail] Error Sending email to {0}, message: {1}", x.Message, emailBody));
+                log.Error(String.Format("  [sendEmail] Error Sending email: {0}, message: {1}", x.InnerException, emailBody));
             }
 
             return result;

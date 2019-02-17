@@ -173,7 +173,7 @@ namespace JUST_PONotifier
             {
                 OdbcConnection cn;
                 OdbcCommand cmd;
-                string POQuery;
+//                string POQuery;
                 var notifiedlist = new ArrayList();
 
                 // user_1 = receiving rack location
@@ -181,8 +181,7 @@ namespace JUST_PONotifier
                 // user_3 = Received Date
                 // user_4 = Bin Cleared Date
                 // user_5 = Notified
-                POQuery = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3, icpo.user_4, icpo.user_5, icpo.defaultjobnum, vendor.name as vendorName, icpo.user_6, icpo.defaultworkorder, icpo.attachid from icpo inner join vendor on vendor.vennum = icpo.vennum where icpo.user_3 is not null and icpo.user_5 = 0 order by icpo.ponum asc";
-POQuery = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3, icpo.user_4, icpo.user_5, icpo.defaultjobnum, vendor.name as vendorName, icpo.user_6, icpo.defaultworkorder, icpo.attachid from icpo inner join vendor on vendor.vennum = icpo.vennum where icpo.user_3 is not null and icpo.ponum = '19144' order by icpo.ponum asc";
+//                POQuery = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3, icpo.user_4, icpo.user_5, icpo.defaultjobnum, vendor.name as vendorName, icpo.user_6, icpo.defaultworkorder, icpo.attachid from icpo inner join vendor on vendor.vennum = icpo.vennum where icpo.user_3 is not null and icpo.user_5 = 0 order by icpo.ponum asc";
 
                 OdbcConnectionStringBuilder just = new OdbcConnectionStringBuilder();
                 just.Driver = "ComputerEase";
@@ -191,10 +190,10 @@ POQuery = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3,
                 just.Add("Pwd", Pwd);
 
                 cn = new OdbcConnection(just.ConnectionString);
-                cmd = new OdbcCommand(POQuery, cn);
+//                cmd = new OdbcCommand(POQuery, cn);
                 cn.Open();
                 log.Info("[ProcessPOData] Connection to database opened successfully");
-                var queries = new DatabaseQueries(cn, log, POAttachmentBasePath);
+                var queries = new DatabaseRepository(cn, log, POAttachmentBasePath);
                 
                 List<PurchaseOrder> purchaseOrdersToNotify;
                 try
@@ -356,13 +355,14 @@ POQuery = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3,
                     log.Error("[ProcessPOData] Reader Error: " + x.Message);
                 }
                 */
-                foreach (var poNum in notifiedlist)
+                foreach (string poNum in notifiedlist)
                 {
                     try
                     {
-                        var updateCommand = string.Format("update icpo set \"user_5\" = 1 where icpo.ponum = '{0}'", poNum);
-                        cmd = new OdbcCommand(updateCommand, cn);
-                        cmd.ExecuteNonQuery();
+                        //                        var updateCommand = string.Format("update icpo set \"user_5\" = 1 where icpo.ponum = '{0}'", poNum);
+                        //                        cmd = new OdbcCommand(updateCommand, cn);
+                        //                        cmd.ExecuteNonQuery();
+                        queries.MarkPOAsNotified(poNum);
                     }
                     catch (Exception x)
                     {

@@ -9,17 +9,26 @@ using System.Threading.Tasks;
 
 namespace JUST_PONotifier.Queries
 {
-    public class DatabaseQueries
+    public class DatabaseRepository : IDatabaseRepository
     {
         private OdbcConnection dbConnection;
         private log4net.ILog log;
         private string POAttachmentsRootPath;
         private List<Employee> Employees = new List<Employee>();
+        private string POQueryString = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3, icpo.user_4, icpo.user_5, icpo.defaultjobnum, vendor.name as vendorName, icpo.user_6, icpo.defaultworkorder, icpo.attachid from icpo inner join vendor on vendor.vennum = icpo.vennum where icpo.user_3 is not null and icpo.user_5 = 0 order by icpo.ponum asc";
 
-        public DatabaseQueries()
+        public string POQuery
+        {
+            get
+            {
+                return POQueryString;
+            }
+        }
+
+        public DatabaseRepository()
         { }
 
-        public DatabaseQueries(OdbcConnection cn, log4net.ILog x, string poAttachmentsRootPath)
+        public DatabaseRepository(OdbcConnection cn, log4net.ILog x, string poAttachmentsRootPath)
         {
             dbConnection = cn;
             log = x;
@@ -227,6 +236,30 @@ namespace JUST_PONotifier.Queries
 
             return pos;
         }
+        
+        public bool MarkPOAsNotified(string poNum)
+        {
+            return MarkPOAsNotified(dbConnection, poNum);
+        }
 
+        private bool MarkPOAsNotified(OdbcConnection cn, string poNum)
+        {
+            bool result = true;
+
+            try
+            {
+                var updateCommand = string.Format("update icpo set \"user_5\" = 1 where icpo.ponum = '{0}'", poNum);
+                var cmd = new OdbcCommand(updateCommand, cn);
+                cmd.ExecuteNonQuery();
+            }
+            catch
+            {
+                log.Error(string.Format("Error marking PO num {0} as notified.", poNum));
+                result = false;
+            }
+
+            return result;
+        }
+        
     }
 }

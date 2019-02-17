@@ -39,7 +39,8 @@
     <Reference Include="System.Web.Extensions" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DatabaseQueries.cs" />
+    <Compile Include="DatabaseRepository.cs" />
+    <Compile Include="IDatabaseRepository.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Classes.cs" />

@@ -7,7 +7,7 @@ using System.Net.Mail;
 namespace JUST_PONotifier_Tests
 {
     [TestFixture()]
-    public class Tests
+    public class ClassesTests
     {
         public List<Attachment> emptyList;
 

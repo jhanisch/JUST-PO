@@ -1,4 +1,4 @@
-﻿using JUST_PONotifier.Queries;
+﻿using JUST.Shared.DatabaseRepository;
 using Moq;
 using NUnit.Framework;
 using System.IO;

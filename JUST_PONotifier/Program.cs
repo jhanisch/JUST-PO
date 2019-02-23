@@ -2,19 +2,17 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Configuration;
-using System.Data;
 using System.Data.Odbc;
-using System.Data.SqlClient;
 using System.Linq;
 using System.Net;
 using System.Net.Mail;
 using System.Text;
-using JUST_PONotifier.Queries;
-using JUST_PONotifier.Classes;
+using JUST.Shared.DatabaseRepository;
+using JUST.Shared.Classes;
 
 namespace JUST_PONotifier
 {
-    class MainClass
+    public class MainClass
     {
         /* version 1.03  */
         private const string debug = "debug";
@@ -34,8 +32,7 @@ namespace JUST_PONotifier
         private static string POAttachmentBasePath;
 
         private static string EmailSubject = "Purchase Order {0} Received from {1}";
-        private static string MessageBodyFormat = "<h2>Purchase Order {0} Received</h2><br><h3>Purchase Order {0} has been received by {1} and has been placed in bin {2}</h3>";
-        private static string MessageBodyFormat2 = @"
+        private static string MessageBodyFormat = @"
     <body style = ""margin-left: 20px; margin-right:20px"" >
         <hr/>
         <h2> Purchase Order {0} Received</h2>
@@ -172,7 +169,7 @@ namespace JUST_PONotifier
             try
             {
                 OdbcConnection cn;
-                OdbcCommand cmd;
+//                OdbcCommand cmd;
 //                string POQuery;
                 var notifiedlist = new ArrayList();
 
@@ -181,10 +178,12 @@ namespace JUST_PONotifier
                 // user_3 = Received Date
                 // user_4 = Bin Cleared Date
                 // user_5 = Notified
-//                POQuery = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3, icpo.user_4, icpo.user_5, icpo.defaultjobnum, vendor.name as vendorName, icpo.user_6, icpo.defaultworkorder, icpo.attachid from icpo inner join vendor on vendor.vennum = icpo.vennum where icpo.user_3 is not null and icpo.user_5 = 0 order by icpo.ponum asc";
+                //                POQuery = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3, icpo.user_4, icpo.user_5, icpo.defaultjobnum, vendor.name as vendorName, icpo.user_6, icpo.defaultworkorder, icpo.attachid from icpo inner join vendor on vendor.vennum = icpo.vennum where icpo.user_3 is not null and icpo.user_5 = 0 order by icpo.ponum asc";
 
-                OdbcConnectionStringBuilder just = new OdbcConnectionStringBuilder();
-                just.Driver = "ComputerEase";
+                OdbcConnectionStringBuilder just = new OdbcConnectionStringBuilder
+                {
+                    Driver = "ComputerEase"
+                };
                 just.Add("Dsn", "Company 0");
                 just.Add("Uid", Uid);
                 just.Add("Pwd", Pwd);
@@ -193,19 +192,19 @@ namespace JUST_PONotifier
 //                cmd = new OdbcCommand(POQuery, cn);
                 cn.Open();
                 log.Info("[ProcessPOData] Connection to database opened successfully");
-                var queries = new DatabaseRepository(cn, log, POAttachmentBasePath);
+                var dbRepository = new DatabaseRepository(cn, log, POAttachmentBasePath);
                 
                 List<PurchaseOrder> purchaseOrdersToNotify;
                 try
                 {
-                    purchaseOrdersToNotify = queries.GetPurchaseOrdersToNotify();
+                    purchaseOrdersToNotify = dbRepository.GetPurchaseOrdersToNotify();
                     log.Info("purchaseOrdersToNotify found " + purchaseOrdersToNotify.Count.ToString() + " items.");
 
                     foreach (PurchaseOrder po in purchaseOrdersToNotify)
                     {
-                        var job = queries.GetEmailBodyInformation(po.JobNumber, po.PurchaseOrderNumber, po.WorkOrderNumber);
-                        var buyerEmployee = GetEmployeeInformation(queries.GetEmployees(), po.Buyer);
-                        var projectManagerEmployee = job.ProjectManagerName.Length > 0 ? GetEmployeeInformation(queries.GetEmployees(), job.ProjectManagerName) : new Employee();
+                        var job = dbRepository.GetEmailBodyInformation(po.JobNumber, po.PurchaseOrderNumber, po.WorkOrderNumber);
+                        var buyerEmployee = GetEmployeeInformation(dbRepository.GetEmployees(), po.Buyer);
+                        var projectManagerEmployee = job.ProjectManagerName.Length > 0 ? GetEmployeeInformation(dbRepository.GetEmployees(), job.ProjectManagerName) : new Employee();
 
                         log.Info("[ProcessPOData] ----------------- Found PO Number " + po.PurchaseOrderNumber + " -------------------");
 
@@ -359,10 +358,7 @@ namespace JUST_PONotifier
                 {
                     try
                     {
-                        //                        var updateCommand = string.Format("update icpo set \"user_5\" = 1 where icpo.ponum = '{0}'", poNum);
-                        //                        cmd = new OdbcCommand(updateCommand, cn);
-                        //                        cmd.ExecuteNonQuery();
-                        queries.MarkPOAsNotified(poNum);
+                        dbRepository.MarkPOAsNotified(poNum);
                     }
                     catch (Exception x)
                     {
@@ -370,7 +366,6 @@ namespace JUST_PONotifier
                     }
                 }
 
-//                reader.Close();
                 cn.Close();
             }
             catch (Exception x)
@@ -382,7 +377,7 @@ namespace JUST_PONotifier
             return;
         }
 
-        private static Employee GetEmployeeInformation(List<Employee> EmployeeEmailAddresses, string employee)
+        public static Employee GetEmployeeInformation(List<Employee> EmployeeEmailAddresses, string employee)
         {
             try
             {
@@ -431,34 +426,11 @@ namespace JUST_PONotifier
                 purchaseOrderItemTable += string.Format(messageBodyTableItem, poItem.ItemNumber, poItem.Description, poItem.Quantity);
             }
 
-            var emailBody = String.Format(MessageBodyFormat2, purchaseOrderNumber, receivedBy, receivedOnDate, bin, job.JobNumber, job.JobName, job.WorkOrderNumber, job.WorkOrderSite, job.CustomerName, vendor, buyerName, notes) + purchaseOrderItemTable + messageBodyTail;
+            var emailBody = String.Format(MessageBodyFormat, purchaseOrderNumber, receivedBy, receivedOnDate, bin, job.JobNumber, job.JobName, job.WorkOrderNumber, job.WorkOrderSite, job.CustomerName, vendor, buyerName, notes) + purchaseOrderItemTable + messageBodyTail;
 
             return emailBody;
         }
-/*
-        private static void NotifyEmployee(ArrayList notifiedlist, string poNum, string employeeEmailAddress, string receivedBy, string bin, string emailSubject, string emailBody, List<Attachment> poAttachments)
-        {
-            try
-            {
-                if (employeeEmailAddress.Length > 0)
-                {
-                    log.Info("  [NotifyEmployee]   sending email to: " + employeeEmailAddress);
-                    if (sendEmail(employeeEmailAddress, emailSubject, emailBody, poAttachments))
-                    {
-                        notifiedlist.Add(poNum);
-                    }
-                }
-                else
-                {
-                    log.Error("  [NotifyEmployee]  Purchase Order does not have an email address defined [" + emailSubject + "]");
-                }
-            }
-            catch (Exception ex)
-            {
-                log.Info("  [NotifyEmployee] Error " + ex.Message);
-            }
-        }
-*/
+
         private static bool sendEmail(ArrayList toEmailAddresses, ArrayList bccList, string subject, string emailBody, List<Attachment> poAttachments)
         {
             bool result = true;
@@ -519,104 +491,7 @@ namespace JUST_PONotifier
 
             return result;
         }
-        /*
-        private static List<Employee> GetEmployees(OdbcConnection cn)
-        {
-            var employees = new List<Employee>();
 
-            var buyerQuery = "Select user_1, user_2, name from premployee where user_1 is not null";
-            var buyerCmd = new OdbcCommand(buyerQuery, cn);
-
-            OdbcDataReader buyerReader = buyerCmd.ExecuteReader();
-
-            while (buyerReader.Read())
-            {
-                var buyer = buyerReader.GetString(0);
-                var email = buyerReader.GetString(1);
-                var name = buyerReader.GetString(2);
-
-                if (buyer.Trim().Length > 0)
-                {
-                    employees.Add(new Employee(buyer, name, email));
-                }
-            }
-
-            buyerReader.Close();
-
-            return employees;
-        }
-        */
-/*
-        private static JobInformation GetEmailBodyInformation(OdbcConnection cn, string jobNum, string purchaseOrderNumber, string workOrderNumber)
-        {
-            // from the jcjob table (Company 0)
-            // user_1 = job description
-            // user_2 = sales person
-            // user_3 = designer
-            // user_4 = Project Manager
-            // user_5 = SM
-            // user_6 = Fitter
-            // user_7 = Plumber
-            // user_8 = Tech 1
-            // user_9 = Tech 2
-
-            // add to email:
-            //  user_1 
-            var jobQuery = "Select jcjob.user_4, jcjob.user_1, customer.name, customer.cusNum from jcjob inner join customer on customer.cusnum = jcjob.cusnum where jobnum = '{0}'";
-            var jobCmd = new OdbcCommand(string.Format(jobQuery, jobNum), cn);
-            var result = new JobInformation();
-            result.JobNumber = jobNum;
-
-            OdbcDataReader jobReader = jobCmd.ExecuteReader();
-
-            if (jobReader.Read())
-            {
-                result.ProjectManagerName = jobReader.GetString(0).ToLower();
-                result.JobName = jobReader.GetString(1);
-                result.CustomerName = jobReader.GetString(2);
-                result.CustomerNumber = jobReader.GetString(3);
-            }
-            else
-            {
-                log.Info(string.Format("  [GetEmailBodyInformation] ERROR: Job Number (jobnum) {0} not found in jcjob", jobNum));
-            }
-
-            jobReader.Close();
-
-            if (workOrderNumber.Trim().Length > 0)
-            {
-                var workOrderQuery = "Select dporder.workorder, dpsite.name from dporder inner join dpsite on dpsite.sitenum = dporder.sitenum where workorder = '{0}'";
-                var workOrderCmd = new OdbcCommand(string.Format(workOrderQuery, workOrderNumber), cn);
-                var workOrderResult = new JobInformation();
-
-                OdbcDataReader workOrderReader = workOrderCmd.ExecuteReader();
-
-                if (workOrderReader.Read())
-                {
-                    result.WorkOrderNumber = workOrderReader.GetString(0);
-                    result.WorkOrderSite = workOrderReader.GetString(1);
-                    log.Info(string.Format("  [GetEmailBodyInformation] INFO: Work Order Number {0} found, Site {1}", workOrderNumber, result.WorkOrderSite));
-                }
-                else
-                {
-                    log.Info(string.Format("  [GetEmailBodyInformation] INFO: Work Order Number (ponum) {0} not found in work order", workOrderNumber));
-                }
-
-                workOrderReader.Close();
-            }
-
-            var poIitemQuery = "Select icpoitem.itemnum, icpoitem.des, icpoitem.outstanding, icpoitem.unitprice from icpoitem where ponum = '{0}' order by icpoitem.itemnum asc";
-            var poItemCmd = new OdbcCommand(string.Format(poIitemQuery, purchaseOrderNumber), cn);
-            OdbcDataReader poItemReader = poItemCmd.ExecuteReader();
-
-            while (poItemReader.Read())
-            {
-                result.PurchaseOrderItems.Add(new PurchaseOrderItem(poItemReader.GetString(0), poItemReader.GetString(1), poItemReader.GetString(2), poItemReader.GetString(3)));
-            }
-
-            return result;
-        }
-        */
     }
 }
 /*

@@ -2,7 +2,7 @@
 using System.Net.Mail;
 using System.Collections.Generic;
 
-namespace JUST_PONotifier.Classes
+namespace JUST.Shared.Classes
 {
 
     public class Employee

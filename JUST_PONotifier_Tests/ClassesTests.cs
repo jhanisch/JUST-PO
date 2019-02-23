@@ -1,4 +1,4 @@
-﻿using JUST_PONotifier.Classes;
+﻿using JUST.Shared.Classes;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;

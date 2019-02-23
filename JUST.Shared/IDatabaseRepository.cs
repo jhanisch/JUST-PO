@@ -4,9 +4,9 @@ using System.Net.Mail;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using JUST_PONotifier.Classes;
+using JUST.Shared.Classes;
 
-namespace JUST_PONotifier.Queries
+namespace JUST.Shared.DatabaseRepository
 {
     public interface IDatabaseRepository
     {

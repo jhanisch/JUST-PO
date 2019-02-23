@@ -1,13 +1,10 @@
-﻿using JUST_PONotifier.Classes;
+﻿using JUST.Shared.Classes;
 using System;
 using System.Collections.Generic;
 using System.Data.Odbc;
-using System.Linq;
 using System.Net.Mail;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace JUST_PONotifier.Queries
+namespace JUST.Shared.DatabaseRepository
 {
     public class DatabaseRepository : IDatabaseRepository
     {

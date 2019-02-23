@@ -27,3 +27,6 @@ C:\Development\JUST-PO\JUST-PO\JUST_PONotifier\obj\x86\Debug\JUST_PONotifier.csp
 C:\Development\JUST-PO\JUST-PO\JUST_PONotifier\obj\x86\Debug\JUST_PONotifier.exe
 C:\Development\JUST-PO\JUST-PO\JUST_PONotifier\obj\x86\Debug\JUST_PONotifier.pdb
 C:\Development\JUST-PO\JUST-PO\JUST_PONotifier\obj\x86\Debug\JUST_PONotifier.csprojResolveAssemblyReference.cache
+C:\Development\JUST-PO\JUST-PO\JUST_PONotifier\bin\Debug\JUST.Shared.dll
+C:\Development\JUST-PO\JUST-PO\JUST_PONotifier\bin\Debug\JUST.Shared.pdb
+C:\Development\JUST-PO\JUST-PO\JUST_PONotifier\bin\Debug\JUST.Shared.dll.config

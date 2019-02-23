@@ -23,6 +23,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -61,12 +62,17 @@
   <ItemGroup>
     <Compile Include="ClassesTests.cs" />
     <Compile Include="DatabaseRepositoryTests.cs" />
+    <Compile Include="ProgramTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\JUST.Shared\JUST.Shared.csproj">
+      <Project>{aa2086e5-3bcc-4684-abe0-2d1f34457d77}</Project>
+      <Name>JUST.Shared</Name>
+    </ProjectReference>
     <ProjectReference Include="..\JUST_PONotifier\JUST_PONotifier.csproj">
       <Project>{c52d3a85-7c0a-4020-bf05-4d7af272d026}</Project>
       <Name>JUST_PONotifier</Name>

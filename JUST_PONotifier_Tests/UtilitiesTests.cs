@@ -1,5 +1,5 @@
-﻿using JUST.PONotifier;
-using JUST.Shared.Classes;
+﻿using JUST.Shared.Classes;
+using JUST.Shared.Utilities;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
@@ -7,12 +7,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace JUST_PONotifier_Tests
+namespace JUST.Shared.Tests
 {
-    public class ProgramTests
+    [TestFixture()]
+    public class UtilitiesTests
     {
-
-        MainClass main = new MainClass();
         List<Employee> EmployeeList = new List<Employee>()
             {
                 new Employee("1", "Enzo", "enzo@ferrari.com"),
@@ -20,18 +19,19 @@ namespace JUST_PONotifier_Tests
                 new Employee("3", "Carroll Shelby", "carroll@shelby.com"),
             };
 
+
         [SetUp]
         public void TestSetup()
         {
         }
-        /*
+
         #region GetEmployeeInformation
         [TestCase]
         public void Program_GetEmployeeInformation_EmptyListReturnsEmptyEmployee()
         {
             var emptyEmployeeList = new List<Employee>();
 
-            var result = MainClass.GetEmployeeInformation(emptyEmployeeList, "Joe");
+            var result = EmployeeLookup.FindEmployeeFromAllEmployees(emptyEmployeeList, "Joe");
             Assert.IsInstanceOf(typeof(Employee), result);
             Assert.AreEqual(result.Name, string.Empty);
             Assert.AreEqual(result.EmailAddress, string.Empty);
@@ -42,7 +42,7 @@ namespace JUST_PONotifier_Tests
         [TestCase]
         public void Program_GetEmployeeInformation_EmployeeNotFoundInListReturnsEmptyEmployee()
         {
-            var result = MainClass.GetEmployeeInformation(EmployeeList, "Joe");
+            var result = EmployeeLookup.FindEmployeeFromAllEmployees(EmployeeList, "Joe");
             Assert.IsInstanceOf(typeof(Employee), result);
             Assert.AreEqual(result.Name, string.Empty);
             Assert.AreEqual(result.EmailAddress, string.Empty);
@@ -55,7 +55,7 @@ namespace JUST_PONotifier_Tests
         [TestCase(2)]
         public void Program_GetEmployeeInformation_EmployeeFoundByEmployeeIdReturnsEmployee(int index)
         {
-            var result = MainClass.GetEmployeeInformation(EmployeeList, EmployeeList[index].EmployeeId);
+            var result = EmployeeLookup.FindEmployeeFromAllEmployees(EmployeeList, EmployeeList[index].EmployeeId);
 
             Assert.IsInstanceOf(typeof(Employee), result);
             Assert.AreEqual(result.Name, EmployeeList[index].Name);
@@ -69,7 +69,7 @@ namespace JUST_PONotifier_Tests
         [TestCase(2)]
         public void Program_GetEmployeeInformation_EmployeeFoundByEmployeeNameReturnsEmployee(int index)
         {
-            var result = MainClass.GetEmployeeInformation(EmployeeList, EmployeeList[index].Name);
+            var result = EmployeeLookup.FindEmployeeFromAllEmployees(EmployeeList, EmployeeList[index].Name);
 
             Assert.IsInstanceOf(typeof(Employee), result);
             Assert.AreEqual(result.Name, EmployeeList[index].Name);
@@ -83,7 +83,7 @@ namespace JUST_PONotifier_Tests
         [TestCase(2)]
         public void Program_GetEmployeeInformation_EmployeeFoundByLowerCaseEmployeeNameReturnsEmployee(int index)
         {
-            var result = MainClass.GetEmployeeInformation(EmployeeList, EmployeeList[index].Name.ToLower());
+            var result = EmployeeLookup.FindEmployeeFromAllEmployees(EmployeeList, EmployeeList[index].Name.ToLower());
 
             Assert.IsInstanceOf(typeof(Employee), result);
             Assert.AreEqual(result.Name, EmployeeList[index].Name);
@@ -97,7 +97,7 @@ namespace JUST_PONotifier_Tests
         [TestCase(2)]
         public void Program_GetEmployeeInformation_EmployeeFoundByUpperCaseEmployeeNameReturnsEmployee(int index)
         {
-            var result = MainClass.GetEmployeeInformation(EmployeeList, EmployeeList[index].Name.ToUpper());
+            var result = EmployeeLookup.FindEmployeeFromAllEmployees(EmployeeList, EmployeeList[index].Name.ToUpper());
 
             Assert.IsInstanceOf(typeof(Employee), result);
             Assert.AreEqual(result.Name, EmployeeList[index].Name);
@@ -106,6 +106,6 @@ namespace JUST_PONotifier_Tests
             Assert.AreEqual(result.Name, EmployeeList[index].Name);
         }
         #endregion
-        */
+
     }
 }

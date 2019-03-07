@@ -1,15 +1,18 @@
 ﻿using JUST.Shared.Classes;
 using NUnit.Framework;
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Net.Mail;
 
-namespace JUST_PONotifier_Tests
+namespace JUST.Shared.Tests
 {
     [TestFixture()]
     public class ClassesTests
     {
         public List<Attachment> emptyList;
+        private ArrayList ValidModes = new ArrayList(new string[] { "debug", "live", "monitor"});
 
         [SetUp]
         public void TestSetup()
@@ -104,6 +107,167 @@ namespace JUST_PONotifier_Tests
             Assert.AreEqual(emailAddress, newObject.EmailAddress);
         }
 
-        #endregion
+        [TestCase]
+        public void Classes_ConfigInitializes()
+        {
+            var newObject = new Config();
+
+            Assert.AreEqual(newObject.FromEmailAddress, string.Empty);
+            Assert.AreEqual(newObject.Uid, string.Empty);
+            Assert.AreEqual(newObject.Pwd, string.Empty);
+            Assert.AreEqual(newObject.POAttachmentBasePath, string.Empty);
+            Assert.AreEqual(newObject.MonitorEmailAddresses.Length, 0);
+            Assert.AreEqual(newObject.Mode, string.Empty);
+            Assert.AreEqual(newObject.FromEmailSMTP, string.Empty);
+            Assert.AreEqual(newObject.FromEmailPort, 25);
+            Assert.AreEqual(newObject.FromEmailPassword, string.Empty);
+            Assert.AreEqual(newObject.FromEmailAddress, string.Empty);
         }
+        
+        //UID Validation
+        [TestCase("", "pwd", "fromEmailAddress", "fromEmailPassword", "fromEmailSMTP", "0", "debug", "monitorEmailAddress", "C:\\", "User ID (Uid) is Required")]
+        [TestCase("", "pwd", "fromEmailAddress", "fromEmailPassword", "fromEmailSMTP", "0", "Debug", "monitorEmailAddress", "C:\\", "User ID (Uid) is Required")]
+        [TestCase("", "pwd", "fromEmailAddress", "fromEmailPassword", "fromEmailSMTP", "0", "DEBUG", "monitorEmailAddress", "C:\\", "User ID (Uid) is Required")]
+        [TestCase(null, "pwd", "fromEmailAddress", "fromEmailPassword", "fromEmailSMTP", "0", "debug", "monitorEmailAddress", "C:\\", "User ID (Uid) is Required")]
+        [TestCase("", "pwd", "fromEmailAddress", "fromEmailPassword", "fromEmailSMTP", "0", "debug", "", "C:\\", "User ID (Uid) is Required")]
+        [TestCase("", "pwd", "fromEmailAddress", "fromEmailPassword", "fromEmailSMTP", "0", "live", "", "C:\\", "User ID (Uid) is Required")]
+        [TestCase("", "pwd", "fromEmailAddress", "fromEmailPassword", "fromEmailSMTP", "0", "monitor", "montorEmailAddress", "C:\\", "User ID (Uid) is Required")]
+        [TestCase("", "pwd", "fromEmailAddress", "fromEmailPassword", "fromEmailSMTP", "0", "monitor", "", "C:\\", "User ID (Uid) is RequiredMonitor Email Address is Required in monitor mode")]
+        [TestCase("", "pwd", "fromEmailAddress", "fromEmailPassword", "fromEmailSMTP", "0", "monitor", "a,b,c", "C:\\", "User ID (Uid) is Required")]
+        [TestCase("", "pwd", "fromEmailAddress", "fromEmailPassword", "fromEmailSMTP", "0", "monitor", "a;b;c", "C:\\", "User ID (Uid) is Required")]
+        //Password validation
+        [TestCase("uid", "", "fromEmailAddress", "fromEmailPassword", "fromEmailSMTP", "0", "debug", "monitorEmailAddress", "C:\\", "Password (Pwd) is Required")]
+        [TestCase("uid", "", "fromEmailAddress", "fromEmailPassword", "fromEmailSMTP", "0", "debug", "", "C:\\", "Password (Pwd) is Required")]
+        [TestCase("uid", "pwd", "", "fromEmailPassword", "fromEmailSMTP", "0", "debug", "monitorEmailAddress", "C:\\", "From Email Address (FromEmailAddress) is Required")]
+        //FromEmailAddress
+        [TestCase("uid", "pwd", "", "fromEmailPassword", "fromEmailSMTP", "0", "debug", "monitorEmailAddress", "C:\\", "From Email Address (FromEmailAddress) is Required")]
+        [TestCase("uid", "pwd", null, "fromEmailPassword", "fromEmailSMTP", "0", "debug", "monitorEmailAddress", "C:\\", "From Email Address (FromEmailAddress) is Required")]
+        //FromEmailPassword
+        [TestCase("uid", "pwd", "fromEmailAddress", "", "fromEmailSMTP", "0", "debug", "monitorEmailAddress", "C:\\", "From Email Password (FromEmailPassword) is Required")]
+        [TestCase("uid", "pwd", "fromEmailAddress", null, "fromEmailSMTP", "0", "debug", "monitorEmailAddress", "C:\\", "From Email Password (FromEmailPassword) is Required")]
+        //FromEmailSMTP
+        [TestCase("uid", "pwd", "fromEmailAddress", "fromEmailPassword", "", "0", "debug", "monitorEmailAddress", "C:\\", "From Email SMTP (FromEmailSMTP) address is Required")]
+        [TestCase("uid", "pwd", "fromEmailAddress", "fromEmailPassword", null, "0", "debug", "monitorEmailAddress", "C:\\", "From Email SMTP (FromEmailSMTP) address is Required")]
+        //FromEmailPort
+        [TestCase("uid", "pwd", "fromEmailAddress", "fromEmailPassword", "fromEmailSMTP", "", "debug", "monitorEmailAddress", "C:\\", "From Email Port (FromEmailPort) is Required")]
+        [TestCase("uid", "pwd", "fromEmailAddress", "fromEmailPassword", "fromEmailSMTP", null, "debug", "monitorEmailAddress", "C:\\", "From Email Port (FromEmailPort) is Required")]
+        [TestCase("uid", "pwd", "fromEmailAddress", "fromEmailPassword", "fromEmailSMTP", "-1", "debug", "monitorEmailAddress", "C:\\", "From Email Port (FromEmailPort) must be a positive value")]
+        //Mode
+        [TestCase("uid", "pwd", "fromEmailAddress", "fromEmailPassword", "fromEmailSMTP", "0", "monitor", "", "C:\\", "Monitor Email Address is Required in monitor mode")]
+        [TestCase("uid", "pwd", "fromEmailAddress", "fromEmailPassword", "fromEmailSMTP", "0", "Monitor", "", "C:\\", "Monitor Email Address is Required in monitor mode")]
+        [TestCase("uid", "pwd", "fromEmailAddress", "fromEmailPassword", "fromEmailSMTP", "0", "MONITOR", "", "C:\\", "Monitor Email Address is Required in monitor mode")]
+        [TestCase("uid", "pwd", "fromEmailAddress", "fromEmailPassword", "fromEmailSMTP", "0", "", "", "C:\\", "Mode is Required.")]
+        [TestCase("uid", "pwd", "fromEmailAddress", "fromEmailPassword", "fromEmailSMTP", "0", null, "", "C:\\", "Mode is Required.")]
+        public void Classes_Config_ThrowsExceptions(
+            string uid, 
+            string pwd, 
+            string fromEmailAddress, 
+            string fromEmailPassword, 
+            string fromEmailSMTP, 
+            string fromEmailPort, 
+            string mode,
+            string monitorEmailAddress,
+            string poAttachmentBasePath,
+            string expectedExceptionMessage)
+        {
+            var newObject = new Config();
+
+            ConfigurationManager.AppSettings["Uid"] = uid;
+            ConfigurationManager.AppSettings["Pwd"] = pwd;
+            ConfigurationManager.AppSettings["FromEmailAddress"] = fromEmailAddress;
+            ConfigurationManager.AppSettings["FromEmailPassword"] = fromEmailPassword; 
+            ConfigurationManager.AppSettings["FromEmailSMTP"] = fromEmailSMTP;
+            ConfigurationManager.AppSettings["FromEmailPort"] = fromEmailPort;
+            ConfigurationManager.AppSettings["Mode"] = mode;
+            ConfigurationManager.AppSettings["MonitorEmailAddress"] = monitorEmailAddress;
+            ConfigurationManager.AppSettings["POAttachmentBasePath"] = poAttachmentBasePath;
+
+            var result = Assert.Throws<Exception>(() => newObject.getConfiguration(ValidModes));
+            Assert.That(result.Message, Is.EqualTo(expectedExceptionMessage));
+
+            if (uid != null)
+            {
+                Assert.AreEqual(newObject.Uid, uid);
+            }
+            else
+            {
+                Assert.IsNull(newObject.Uid);
+            }
+
+            if (pwd != null)
+            {
+                Assert.AreEqual(newObject.Pwd, pwd);
+            }
+            else
+            {
+                Assert.IsNull(newObject.Pwd);
+            }
+
+            if (fromEmailAddress != null)
+            {
+                Assert.AreEqual(newObject.FromEmailAddress, fromEmailAddress);
+            }
+            else
+            {
+                Assert.IsNull(newObject.FromEmailAddress);
+            }
+
+            if (fromEmailPassword != null)
+            {
+                Assert.AreEqual(newObject.FromEmailPassword, fromEmailPassword);
+            }
+            else
+            {
+                Assert.IsNull(newObject.FromEmailPassword);
+            }
+
+            if (fromEmailSMTP != null)
+            {
+                Assert.AreEqual(newObject.FromEmailSMTP, fromEmailSMTP);
+            }
+            else
+            {
+                Assert.IsNull(newObject.FromEmailSMTP);
+            }
+
+            if (!String.IsNullOrEmpty(fromEmailPort))
+            {
+                Assert.AreEqual(newObject.FromEmailPort, Convert.ToInt32(fromEmailPort));
+            }
+            else
+            {
+                Assert.AreEqual(newObject.FromEmailPort, 25);  // email port defaults to 25 if no value is found
+            }
+
+            /*  need to test monitor email address splitting
+            if (monitorEmailAddress != null)
+            {
+                Assert.AreEqual(newObject.MonitorEmailAddresses, monitorEmailAddress);
+            }
+            else
+            {
+                Assert.IsNull(newObject.MonitorEmailAddresses);
+            }
+            */
+
+            if (poAttachmentBasePath != null)
+            {
+                Assert.AreEqual(newObject.POAttachmentBasePath, poAttachmentBasePath);
+            }
+            else
+            {
+                Assert.IsNull(newObject.POAttachmentBasePath);
+            }
+
+            if (mode != null)
+            {
+                Assert.AreEqual(newObject.Mode, mode.ToLower());
+            }
+            else
+            {
+                Assert.IsEmpty(newObject.Mode);
+            }
+        }
+        #endregion
+    }
 }

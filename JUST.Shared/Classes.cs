@@ -1,9 +1,135 @@
 ﻿using System;
-using System.Net.Mail;
+using System.Collections;
 using System.Collections.Generic;
+using System.Configuration;
+using System.Net.Mail;
+using System.Text;
 
 namespace JUST.Shared.Classes
 {
+    public class Config
+    {
+        private const string monitor = "monitor";
+
+        public Config()
+        {
+            Uid = string.Empty;
+            Pwd = string.Empty;
+            FromEmailAddress = string.Empty;
+            FromEmailPassword = string.Empty;
+            FromEmailSMTP = string.Empty;
+            FromEmailPort = 25;
+            Mode = string.Empty;
+            MonitorEmailAddresses = new string[0];
+            POAttachmentBasePath = string.Empty;
+        }
+
+        public string Uid { get; private set; }
+        public string Pwd { get; private set; }
+        public string FromEmailAddress { get; private set; }
+        public string FromEmailPassword { get; private set; }
+        public string FromEmailSMTP { get; private set; }
+        public int? FromEmailPort { get; private set; }
+        public string Mode { get; private set; }
+        public string[] MonitorEmailAddresses;
+        public string POAttachmentBasePath { get; private set; }
+
+        public void getConfiguration(ArrayList ValidModes)
+        {
+            string fromEmailPortString, modeString;
+
+            Uid = ConfigurationManager.AppSettings["Uid"];
+            Pwd = ConfigurationManager.AppSettings["Pwd"];
+            FromEmailAddress = ConfigurationManager.AppSettings["FromEmailAddress"];
+            FromEmailPassword = ConfigurationManager.AppSettings["FromEmailPassword"];
+            FromEmailSMTP = ConfigurationManager.AppSettings["FromEmailSMTP"];
+            fromEmailPortString = ConfigurationManager.AppSettings["FromEmailPort"];
+
+            modeString = ConfigurationManager.AppSettings["Mode"];
+            var MonitorEmailAddressList = ConfigurationManager.AppSettings["MonitorEmailAddress"];
+            if (MonitorEmailAddressList.Length > 0)
+            {
+                char[] delimiterChars = { ';', ',' };
+                MonitorEmailAddresses = MonitorEmailAddressList.Split(delimiterChars);
+            }
+
+            POAttachmentBasePath = ConfigurationManager.AppSettings["POAttachmentBasePath"];
+
+            #region Validate Configuration Data
+            var errorMessage = new StringBuilder();
+            if (String.IsNullOrEmpty(Uid))
+            {
+                errorMessage.Append("User ID (Uid) is Required");
+            }
+
+            if (String.IsNullOrEmpty(Pwd))
+            {
+                errorMessage.Append("Password (Pwd) is Required");
+            }
+
+            if (String.IsNullOrEmpty(FromEmailAddress))
+            {
+                errorMessage.Append("From Email Address (FromEmailAddress) is Required");
+            }
+
+            if (String.IsNullOrEmpty(FromEmailPassword))
+            {
+                errorMessage.Append("From Email Password (FromEmailPassword) is Required");
+            }
+
+            if (String.IsNullOrEmpty(FromEmailSMTP))
+            {
+                errorMessage.Append("From Email SMTP (FromEmailSMTP) address is Required");
+            }
+
+            if (String.IsNullOrEmpty(fromEmailPortString))
+            {
+                errorMessage.Append("From Email Port (FromEmailPort) is Required");
+            }
+            else
+            {
+                FromEmailPort = Convert.ToInt16(fromEmailPortString);
+
+                if (FromEmailPort < 0)
+                {
+                    errorMessage.Append("From Email Port (FromEmailPort) must be a positive value");
+                }
+            }
+
+            if (String.IsNullOrEmpty(modeString))
+            {
+                errorMessage.Append("Mode is Required.");
+            }
+            else
+            {
+                Mode = modeString.ToLower();
+                if (!ValidModes.Contains(Mode))
+                {
+                    errorMessage.Append(String.Format("'{0}' is not a valid Mode.  Valid modes are 'debug', 'live' and 'monitor'", Mode));
+                }
+            }
+
+
+            if (Mode == monitor)
+            {
+                if (MonitorEmailAddresses == null || MonitorEmailAddresses.Length == 0)
+                {
+                    errorMessage.Append("Monitor Email Address is Required in monitor mode");
+                }
+            }
+
+            if (String.IsNullOrEmpty(POAttachmentBasePath))
+            {
+                errorMessage.Append("Root Path to Attachments (AttachmentBasePath) is Required");
+            }
+
+            if (errorMessage.Length > 0)
+            {
+                throw new Exception(errorMessage.ToString());
+            }
+            #endregion
+        }
+    }
 
     public class Employee
     {
@@ -89,7 +215,6 @@ namespace JUST.Shared.Classes
         public List<Attachment> Attachments { get; set; }
     }
 
-
     public class PurchaseOrderItem
     {
         public PurchaseOrderItem()
@@ -114,7 +239,6 @@ namespace JUST.Shared.Classes
         public string UnitPrice { get; set; }
         public long Received { get; set; }
     }
-
 
     public class JobInformation
     {

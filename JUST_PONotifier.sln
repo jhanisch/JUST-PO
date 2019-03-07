@@ -4,7 +4,7 @@ VisualStudioVersion = 15.0.27130.2010
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JUST_PONotifier", "JUST_PONotifier\JUST_PONotifier.csproj", "{C52D3A85-7C0A-4020-BF05-4D7AF272D026}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JUST_PONotifier_Tests", "JUST_PONotifier_Tests\JUST_PONotifier_Tests.csproj", "{927B544A-38AA-4357-83B8-351AC646CE55}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JUST.Shared.Tests", "JUST_PONotifier_Tests\JUST.Shared.Tests.csproj", "{927B544A-38AA-4357-83B8-351AC646CE55}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JUST.Shared", "JUST.Shared\JUST.Shared.csproj", "{AA2086E5-3BCC-4684-ABE0-2D1F34457D77}"
 EndProject

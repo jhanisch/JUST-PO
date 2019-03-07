@@ -16,9 +16,9 @@ namespace JUST.Shared.DatabaseRepository
 
         JobInformation GetEmailBodyInformation(string jobNum, string purchaseOrderNumber, string workOrderNumber);
 
-        List<Employee> GetEmployees();
-
         List<PurchaseOrder> GetPurchaseOrdersToNotify();
+
+        List<Employee> GetEmployees();
 
         bool MarkPOAsNotified(string poNum);
     }

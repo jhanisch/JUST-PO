@@ -1,16 +1,14 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Data.Odbc;
-using System.Linq;
 using System.Net;
 using System.Net.Mail;
-using System.Text;
 using JUST.Shared.DatabaseRepository;
 using JUST.Shared.Classes;
+using JUST.Shared.Utilities;
 
-namespace JUST_PONotifier
+namespace JUST.PONotifier
 {
     public class MainClass
     {
@@ -20,16 +18,8 @@ namespace JUST_PONotifier
         private const string monitor = "monitor";
 
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-        private static string Uid;
-        private static string Pwd;
-        private static string FromEmailAddress;
-        private static string FromEmailPassword;
-        private static string FromEmailSMTP;
-        private static int? FromEmailPort;
-        private static string Mode;
-        private static string[] MonitorEmailAddresses;
         private static ArrayList ValidModes = new ArrayList() { debug, live, monitor };
-        private static string POAttachmentBasePath;
+        private static Config config = new Config();
 
         private static string EmailSubject = "Purchase Order {0} Received from {1}";
         private static string MessageBodyFormat = @"
@@ -68,7 +58,7 @@ namespace JUST_PONotifier
             {
                 log.Info("[Main] Starting up at " + DateTime.Now);
 
-                getConfiguration();
+                config.getConfiguration(ValidModes);
 
                 ProcessPOData();
 
@@ -80,97 +70,11 @@ namespace JUST_PONotifier
             }
         }
 
-        private static void getConfiguration()
-        {
-            Uid = ConfigurationManager.AppSettings["Uid"];
-            Pwd = ConfigurationManager.AppSettings["Pwd"];
-            FromEmailAddress = ConfigurationManager.AppSettings["FromEmailAddress"];
-            FromEmailPassword = ConfigurationManager.AppSettings["FromEmailPassword"];
-            FromEmailSMTP = ConfigurationManager.AppSettings["FromEmailSMTP"];
-            FromEmailPort = Convert.ToInt16(ConfigurationManager.AppSettings["FromEmailPort"]);
-
-            Mode = ConfigurationManager.AppSettings["Mode"].ToLower();
-            var MonitorEmailAddressList = ConfigurationManager.AppSettings["MonitorEmailAddress"];
-            if (MonitorEmailAddressList.Length > 0)
-            {
-                char[] delimiterChars = { ';', ',' };
-                MonitorEmailAddresses = MonitorEmailAddressList.Split(delimiterChars);
-            }
-
-            POAttachmentBasePath = ConfigurationManager.AppSettings["POAttachmentBasePath"];
-
-            #region Validate Configuration Data
-            var errorMessage = new StringBuilder();
-            if (String.IsNullOrEmpty(Uid))
-            {
-                errorMessage.Append("User ID (Uid) is Required");
-            }
-
-            if (String.IsNullOrEmpty(Pwd))
-            {
-                errorMessage.Append("Password (Pwd) is Required");
-            }
-
-            if (String.IsNullOrEmpty(FromEmailAddress))
-            {
-                errorMessage.Append("From Email Address (FromEmailAddress) is Required");
-            }
-
-            if (String.IsNullOrEmpty(FromEmailPassword))
-            {
-                errorMessage.Append("From Email Password (FromEmailPassword) is Required");
-            }
-
-            if (String.IsNullOrEmpty(FromEmailSMTP))
-            {
-                errorMessage.Append("From Email SMTP (FromEmailSMTP) address is Required");
-            }
-
-            if (!FromEmailPort.HasValue)
-            {
-                errorMessage.Append("From Email Port (FromEmailPort) is Required");
-            }
-
-            if (String.IsNullOrEmpty(Mode))
-            {
-                errorMessage.Append("Mode is Required");
-            }
-
-            if (!ValidModes.Contains(Mode.ToLower()))
-            {
-                errorMessage.Append(String.Format("{0} is not a valid Mode.  Valid modes are 'debug', 'live' and 'monitor'", Mode));
-            }
-
-            if (Mode == monitor)
-            {
-                log.Info("checking MontorEmailAddressList");
-                if (MonitorEmailAddresses == null || MonitorEmailAddresses.Length == 0)
-                {
-                    errorMessage.Append("Monitor Email Address is Required in monitor mode");
-                }
-                log.Info("finished checking MontorEmailAddressList");
-            }
-
-            if (String.IsNullOrEmpty(POAttachmentBasePath))
-            {
-                errorMessage.Append("Root Path to Attachments (AttachmentBasePath) is Required");
-            }
-
-            if (errorMessage.Length > 0)
-            {
-                throw new Exception(errorMessage.ToString());
-            }
-            #endregion
-
-        }
-
         private static void ProcessPOData()
         {
             try
             {
                 OdbcConnection cn;
-//                OdbcCommand cmd;
-//                string POQuery;
                 var notifiedlist = new ArrayList();
 
                 // user_1 = receiving rack location
@@ -185,14 +89,13 @@ namespace JUST_PONotifier
                     Driver = "ComputerEase"
                 };
                 just.Add("Dsn", "Company 0");
-                just.Add("Uid", Uid);
-                just.Add("Pwd", Pwd);
+                just.Add("Uid", config.Uid);
+                just.Add("Pwd", config.Pwd);
 
                 cn = new OdbcConnection(just.ConnectionString);
-//                cmd = new OdbcCommand(POQuery, cn);
                 cn.Open();
                 log.Info("[ProcessPOData] Connection to database opened successfully");
-                var dbRepository = new DatabaseRepository(cn, log, POAttachmentBasePath);
+                var dbRepository = new DatabaseRepository(cn, log, config.POAttachmentBasePath);
                 
                 List<PurchaseOrder> purchaseOrdersToNotify;
                 try
@@ -203,8 +106,8 @@ namespace JUST_PONotifier
                     foreach (PurchaseOrder po in purchaseOrdersToNotify)
                     {
                         var job = dbRepository.GetEmailBodyInformation(po.JobNumber, po.PurchaseOrderNumber, po.WorkOrderNumber);
-                        var buyerEmployee = GetEmployeeInformation(dbRepository.GetEmployees(), po.Buyer);
-                        var projectManagerEmployee = job.ProjectManagerName.Length > 0 ? GetEmployeeInformation(dbRepository.GetEmployees(), job.ProjectManagerName) : new Employee();
+                        var buyerEmployee =  EmployeeLookup.FindEmployeeFromAllEmployees(dbRepository.GetEmployees(), po.Buyer);
+                        var projectManagerEmployee = job.ProjectManagerName.Length > 0 ? EmployeeLookup.FindEmployeeFromAllEmployees(dbRepository.GetEmployees(), job.ProjectManagerName) : new Employee();
 
                         log.Info("[ProcessPOData] ----------------- Found PO Number " + po.PurchaseOrderNumber + " -------------------");
 
@@ -213,7 +116,7 @@ namespace JUST_PONotifier
 
                         ArrayList primaryRecipients = new ArrayList();
                         ArrayList bccList = new ArrayList();
-                        if ((Mode == live) || (Mode == monitor))
+                        if ((config.Mode == live) || (config.Mode == monitor))
                         {
                             primaryRecipients.Add(buyerEmployee.EmailAddress);
                             if (projectManagerEmployee.EmailAddress.Length > 0 && buyerEmployee.EmailAddress != projectManagerEmployee.EmailAddress)
@@ -222,10 +125,10 @@ namespace JUST_PONotifier
                             }
                         }
 
-                        if (((Mode == monitor) || (Mode == debug)) &&
-                            (MonitorEmailAddresses != null && MonitorEmailAddresses.Length > 0))
+                        if (((config.Mode == monitor) || (config.Mode == debug)) &&
+                            (config.MonitorEmailAddresses != null && config.MonitorEmailAddresses.Length > 0))
                         {
-                            foreach(string monitorEmailAddress in MonitorEmailAddresses)
+                            foreach(string monitorEmailAddress in config.MonitorEmailAddresses)
                             {
                                 bccList.Add(monitorEmailAddress);
                             }
@@ -240,120 +143,13 @@ namespace JUST_PONotifier
                         {
                             notifiedlist.Add(po.PurchaseOrderNumber);
                         }
-
-                        /*
-                                                log.Info("[MONITOR] email message: " + emailBody);
-                                                if ((Mode == live) || (Mode == monitor))
-                                                {
-                                                    log.Info("[ProcessPOData] Mode: " + Mode.ToString() + ", buyer: " + po.Buyer + ", buyer email:" + buyerEmployee.EmailAddress);
-
-                                                    NotifyEmployee(notifiedlist, po.PurchaseOrderNumber, buyerEmployee.EmailAddress, po.ReceivedBy, po.Bin, emailSubject, emailBody, po.Attachments);
-                                                    if (projectManagerEmployee.EmailAddress.Length > 0 && buyerEmployee.EmailAddress != projectManagerEmployee.EmailAddress)
-                                                    {
-                                                        NotifyEmployee(notifiedlist, po.PurchaseOrderNumber, projectManagerEmployee.EmailAddress, po.ReceivedBy, po.Bin, emailSubject, emailBody, po.Attachments);
-                                                    }
-                                                }
-                                                else
-                                                {
-                                                    log.Info("[ProcessPOData] Debug: Notification email would have been sent to buyer: " + po.Buyer + " and/or Project Manager: " + job.ProjectManagerName);
-                                                }
-
-                                                if (((Mode == monitor) || (Mode == debug)) &&
-                                                    (MonitorEmailAddresses != null && MonitorEmailAddresses.Length > 0))
-                                                {
-                                                    foreach (var emailAddress in MonitorEmailAddresses)
-                                                    {
-                                                        if (sendEmail(emailAddress, emailSubject, emailBody, po.Attachments))
-                                                        {
-                                                            if (!notifiedlist.Contains(po.PurchaseOrderNumber))
-                                                            {
-                                                                notifiedlist.Add(po.PurchaseOrderNumber);
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                        */
                     }
                 }
                 catch (Exception ex)
                 {
                     log.Info(ex.Message);
                 }
-/*                
-                OdbcDataReader reader = cmd.ExecuteReader();
-                try
-                {
-                    var EmployeeEmailAddresses = GetEmployees(cn);
-                    var buyerColumn = reader.GetOrdinal("buyer");
-                    var poNumColumn = reader.GetOrdinal("ponum");
-                    var jobNumberColumn = reader.GetOrdinal("defaultjobnum");
-                    var binColumn = reader.GetOrdinal("user_1");
-                    var receivedByColumn = reader.GetOrdinal("user_2");
-                    var receivedOnDateColumn = reader.GetOrdinal("user_3");
-                    var vendorNameColumn = reader.GetOrdinal("vendorName");
-                    var notesColumn = reader.GetOrdinal("user_6");
-                    var workOrderNumberColumn = reader.GetOrdinal("defaultworkorder");
-                    var attachmentIdColumn = reader.GetOrdinal("attachid");
 
-                    while (reader.Read())
-                    {
-                        var purchaseOrderNumber = reader.GetString(poNumColumn);
-                        var receivedBy = reader.GetString(receivedByColumn);
-                        var bin = reader.GetString(binColumn);
-                        var receivedOnDate = reader.GetDate(receivedOnDateColumn).ToShortDateString();
-                        var buyer = reader.GetString(buyerColumn).ToLower();
-                        var vendor = reader.GetString(vendorNameColumn);
-                        var notes = reader.GetString(notesColumn);
-                        var workOrderNumber = reader.GetString(workOrderNumberColumn);
-                        var attachmentId = reader.GetString(attachmentIdColumn);
-                        var job = queries.GetEmailBodyInformation(reader.GetString(jobNumberColumn), purchaseOrderNumber, workOrderNumber);
-                        var buyerEmployee = GetEmployeeInformation(EmployeeEmailAddresses, buyer);
-                        var projectManagerEmployee = job.ProjectManagerName.Length > 0 ? GetEmployeeInformation(EmployeeEmailAddresses, job.ProjectManagerName) : new Employee();
-                        var attachments = queries.GetAttachmentsForPO(attachmentId);
-
-                        log.Info("[ProcessPOData] ----------------- Found PO Number " + purchaseOrderNumber + " -------------------");
-
-                        var emailSubject = String.Format(EmailSubject, purchaseOrderNumber, vendor);
-                        var emailBody = FormatEmailBody(receivedOnDate, purchaseOrderNumber, receivedBy, bin, buyerEmployee.Name, vendor, job, notes);
-
-                        log.Info("[MONITOR] email message: " + emailBody);
-                        if ((Mode == live) || (Mode == monitor))
-                        {
-                            log.Info("[ProcessPOData] Mode: " + Mode.ToString() + ", buyer: " + buyer + ", buyer email:" + buyerEmployee.EmailAddress);
-
-                            NotifyEmployee(notifiedlist, purchaseOrderNumber, buyerEmployee.EmailAddress, receivedBy, bin, emailSubject, emailBody, attachments);
-                            if (projectManagerEmployee.EmailAddress.Length > 0 && buyerEmployee.EmailAddress != projectManagerEmployee.EmailAddress)
-                            {
-                                NotifyEmployee(notifiedlist, purchaseOrderNumber, projectManagerEmployee.EmailAddress, receivedBy, bin, emailSubject, emailBody, attachments);
-                            }
-                        }
-                        else
-                        {
-                            log.Info("[ProcessPOData] Debug: Notification email would have been sent to buyer: " + buyer + " and/or Project Manager: " + job.ProjectManagerName);
-                        }
-
-                        if (((Mode == monitor) || (Mode == debug)) &&
-                            (MonitorEmailAddresses != null && MonitorEmailAddresses.Length > 0))
-                        {
-                            foreach (var emailAddress in MonitorEmailAddresses)
-                            {
-
-                                if (sendEmail(emailAddress, emailSubject, emailBody, attachments))
-                                {
-                                    if (!notifiedlist.Contains(purchaseOrderNumber))
-                                    {
-                                        notifiedlist.Add(purchaseOrderNumber);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                catch (Exception x)
-                {
-                    log.Error("[ProcessPOData] Reader Error: " + x.Message);
-                }
-                */
                 foreach (string poNum in notifiedlist)
                 {
                     try
@@ -375,47 +171,6 @@ namespace JUST_PONotifier
             }
 
             return;
-        }
-
-        public static Employee GetEmployeeInformation(List<Employee> EmployeeEmailAddresses, string employee)
-        {
-            try
-            {
-                var e = EmployeeEmailAddresses.FirstOrDefault(x => x.EmployeeId.ToLowerInvariant() == employee.ToLowerInvariant());
-
-                if (e != null && e.EmailAddress.Length > 0)
-                {
-                    return e;
-                }
-            }
-            catch (KeyNotFoundException)
-            {
-                log.Info("[GetEmployeeInformation] No Employee record found by employeeid for : " + employee);
-            }
-            catch (Exception x)
-            {
-                log.Error("[GetEmployeeInformation] by employeeid exception: " + x.Message);
-            }
-
-            try
-            {
-                var e = EmployeeEmailAddresses.FirstOrDefault(x => x.Name.ToLowerInvariant() == employee.ToLowerInvariant());
-
-                if (e != null && e.EmailAddress.Length > 0)
-                {
-                    return e;
-                }
-            }
-            catch (KeyNotFoundException)
-            {
-                log.Info("[GetEmployeeInformation] No Employee record found by name for : " + employee);
-            }
-            catch (Exception x)
-            {
-                log.Error("[GetEmployeeInformation] by name exception: " + x.Message);
-            }
-
-            return new Employee();
         }
 
         private static string FormatEmailBody(string receivedOnDate, string purchaseOrderNumber, string receivedBy, string bin, string buyerName, string vendor, JobInformation job, string notes)
@@ -449,7 +204,7 @@ namespace JUST_PONotifier
             {
                 using (MailMessage mail = new MailMessage())
                 {
-                    mail.From = new MailAddress(FromEmailAddress, "PO Notification");
+                    mail.From = new MailAddress(config.FromEmailAddress, "PO Notification");
                     foreach (string primaryEmailAddress in toEmailAddresses)
                     {
                         mail.To.Add(primaryEmailAddress);
@@ -471,9 +226,9 @@ namespace JUST_PONotifier
                         mail.Attachments.Add(poAttachment);
                     }
 
-                    using (SmtpClient smtp = new SmtpClient(FromEmailSMTP, FromEmailPort.Value))
+                    using (SmtpClient smtp = new SmtpClient(config.FromEmailSMTP, config.FromEmailPort.Value))
                     {
-                        smtp.Credentials = new NetworkCredential(FromEmailAddress, FromEmailPassword);
+                        smtp.Credentials = new NetworkCredential(config.FromEmailAddress, config.FromEmailPassword);
                         smtp.EnableSsl = true;
                         smtp.Send(mail);
                         log.Info("  [sendEmail] Email Sent successfully");

@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Odbc;
+using System.Linq;
 using System.Net.Mail;
 
 namespace JUST.Shared.DatabaseRepository
@@ -257,6 +258,5 @@ namespace JUST.Shared.DatabaseRepository
 
             return result;
         }
-        
     }
 }

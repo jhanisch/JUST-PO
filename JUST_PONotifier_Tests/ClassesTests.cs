@@ -289,12 +289,16 @@ namespace JUST.Shared.Tests
             Assert.AreEqual(String.Empty, newObject.SiteName);
             Assert.AreEqual(String.Empty, newObject.DescriptionOfWork);
             Assert.AreEqual(String.Empty, newObject.TicketNote);
+            Assert.AreEqual(String.Empty, newObject.ServicePerson);
+            Assert.AreEqual(String.Empty, newObject.Manufacturer);
+            Assert.AreEqual(String.Empty, newObject.Model);
+            Assert.AreEqual(String.Empty, newObject.SerialNumber);
         }
 
-        [TestCase("workOrder", "workTicket", "customerName", "siteName", "descriptionOfWork", "ticketNote")]
-        public void Classes_QuoteNeeded(string workOrder, string workTicket, string customerName, string siteName, string descriptionOfWork, string ticketNote)
+        [TestCase("workOrder", "workTicket", "customerName", "siteName", "descriptionOfWork", "ticketNote", "serviceperson", "make", "model", "serialnumber")]
+        public void Classes_QuoteNeeded(string workOrder, string workTicket, string customerName, string siteName, string descriptionOfWork, string ticketNote, string servicePerson, string manufacturer, string model, string serialNumber)
         {
-            var newObject = new Quote(workOrder, workTicket, customerName, siteName, descriptionOfWork, ticketNote);
+            var newObject = new Quote(workOrder, workTicket, customerName, siteName, descriptionOfWork, ticketNote, servicePerson, manufacturer, model, serialNumber);
 
             Assert.AreEqual(workOrder, newObject.WorkOrder);
             Assert.AreEqual(workTicket, newObject.WorkTicket);
@@ -302,6 +306,11 @@ namespace JUST.Shared.Tests
             Assert.AreEqual(siteName, newObject.SiteName);
             Assert.AreEqual(descriptionOfWork, newObject.DescriptionOfWork);
             Assert.AreEqual(ticketNote, newObject.TicketNote);
+            Assert.AreEqual(servicePerson, newObject.ServicePerson);
+            Assert.AreEqual(manufacturer, newObject.Manufacturer);
+            Assert.AreEqual(model, newObject.Model);
+            Assert.AreEqual(serialNumber, newObject.SerialNumber);
+
         }
 
         #endregion

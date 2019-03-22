@@ -283,6 +283,10 @@ namespace JUST.Shared.Classes
         public string SiteName { get; set; }
         public string DescriptionOfWork { get; set; }
         public string TicketNote { get; set; }
+        public string ServicePerson { get; set; }
+        public string Manufacturer { get; set; }
+        public string Model { get; set; }
+        public string SerialNumber { get; set; }
 
         public Quote()
         {
@@ -292,9 +296,22 @@ namespace JUST.Shared.Classes
             SiteName = string.Empty;
             DescriptionOfWork = string.Empty;
             TicketNote = string.Empty;
+            ServicePerson = string.Empty;
+            Manufacturer = string.Empty;
+            Model = string.Empty;
+            SerialNumber = string.Empty;
         }
 
-        public Quote(string workOrder, string workTicket, string customerName, string siteName, string descriptionOfWork, string ticketNote)
+        public Quote(string workOrder, 
+            string workTicket, 
+            string customerName, 
+            string siteName, 
+            string descriptionOfWork, 
+            string ticketNote,
+            string servicePerson,
+            string manufacturer,
+            string model,
+            string serialNumber)
         {
             WorkOrder = workOrder;
             WorkTicket = workTicket;
@@ -302,6 +319,10 @@ namespace JUST.Shared.Classes
             SiteName = siteName;
             DescriptionOfWork = descriptionOfWork;
             TicketNote = ticketNote;
+            ServicePerson = servicePerson;
+            Manufacturer = manufacturer;
+            Model = model;
+            SerialNumber = serialNumber;
         }
 
     }

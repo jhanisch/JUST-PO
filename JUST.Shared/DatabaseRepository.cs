@@ -14,7 +14,7 @@ namespace JUST.Shared.DatabaseRepository
         private string POAttachmentsRootPath;
         private List<Employee> Employees = new List<Employee>();
         private string POQueryString = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3, icpo.user_4, icpo.user_5, icpo.defaultjobnum, vendor.name as vendorName, icpo.user_6, icpo.defaultworkorder, icpo.attachid from icpo inner join vendor on vendor.vennum = icpo.vennum where icpo.user_3 is not null and icpo.user_5 = 0 order by icpo.ponum asc";
-        private string QuotesNeededQueryString = "select dpwoassign.workorder workorder, dpwoassign.ticketnum ticketnum, customer.name customername, dpsite.sitenum sitenum, dpsite.name sitename, dporder.des workorderdescription, dpwoassign.user_17 ticketnote from dpwoassign, dporder, dpsite, customer where dpwoassign.user_15 = 1 and dpwoassign.ticketnum<> '' and dporder.workorder = dpwoassign.workorder and dpsite.sitenum = dpwoassign.sitenum and customer.cusnum = dpsite.cusnum";
+        private string QuotesNeededQueryString = "select dpwoassign.workorder workorder, dpwoassign.ticketnum ticketnum, customer.name customername, dpsite.sitenum sitenum, dpsite.name sitename, dporder.des workorderdescription, dpwoassign.user_17 ticketnote, dpwoassign.user_2 model, dpwoassign.user_3 serialnumber, dpwoassign.user_4 manufacturer from dpwoassign, dporder, dpsite, customer where dpwoassign.user_15 = 1 and dpwoassign.ticketnum<> '' and dporder.workorder = dpwoassign.workorder and dpsite.sitenum = dpwoassign.sitenum and customer.cusnum = dpsite.cusnum";
 
         public string POQuery
         {
@@ -282,6 +282,9 @@ namespace JUST.Shared.DatabaseRepository
             var siteNameColumn = reader.GetOrdinal("sitename");
             var descriptionOfWorkColumn = reader.GetOrdinal("workorderdescription");
             var ticketNoteColumn = reader.GetOrdinal("ticketnote");
+            var makeColumn = reader.GetOrdinal("manufacturer");
+            var modelColumn = reader.GetOrdinal("model");
+            var serialNumberColumn = reader.GetOrdinal("serialnumber");
 
             while (reader.Read())
             {
@@ -291,8 +294,11 @@ namespace JUST.Shared.DatabaseRepository
                 var siteName = reader.GetString(siteNameColumn);
                 var descriptionOfWork = reader.GetString(descriptionOfWorkColumn);
                 var ticketNote = reader.GetString(ticketNoteColumn);
+                var make = reader.GetString(makeColumn);
+                var model = reader.GetString(modelColumn);
+                var serialNumber = reader.GetString(serialNumberColumn);
 
-                quotesNeeded.Add(new Quote(workOrder, workTicket, customerName, siteName, descriptionOfWork, ticketNote));
+                quotesNeeded.Add(new Quote(workOrder, workTicket, customerName, siteName, descriptionOfWork, ticketNote, string.Empty, make, model, serialNumber));
             }
 
             return quotesNeeded;

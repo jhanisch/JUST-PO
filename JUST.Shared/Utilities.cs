@@ -2,6 +2,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.Mail;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -50,6 +52,43 @@ namespace JUST.Shared.Utilities
             }
 
             return new Employee();
+        }
+    }
+
+    public static class Utils
+    {
+        public static bool sendEmail(Config config, string toEmailAddress, string subject, string emailBody)
+        {
+            bool result = true;
+            if (toEmailAddress.Length == 0)
+            {
+                return false;
+            }
+
+            try
+            {
+                using (MailMessage mail = new MailMessage())
+                {
+                    mail.From = new MailAddress(config.FromEmailAddress, "New Job Notification");
+                    mail.To.Add(toEmailAddress);
+                    mail.Subject = subject;
+                    mail.Body = emailBody;
+                    mail.IsBodyHtml = true;
+
+                    using (SmtpClient smtp = new SmtpClient(config.FromEmailSMTP, config.FromEmailPort.Value))
+                    {
+                        smtp.Credentials = new NetworkCredential(config.FromEmailAddress, config.FromEmailPassword);
+                        smtp.EnableSsl = true;
+                        smtp.Send(mail);
+                    }
+                }
+            }
+            catch (Exception x)
+            {
+                result = false;
+            }
+
+            return result;
         }
     }
 }

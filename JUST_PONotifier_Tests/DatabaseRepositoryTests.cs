@@ -45,5 +45,15 @@ namespace JUST_PONotifier_Tests
             DatabaseRepository testClass = new DatabaseRepository();
             Assert.AreEqual(testClass.POQuery, expectedPOQuery);
         }
+
+        [TestCase]
+        public void DatabaseQueries_VerifyQuotesNeededQueryy()
+        {
+            string expectedQuotesNeededQuery = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3, icpo.user_4, icpo.user_5, icpo.defaultjobnum, vendor.name as vendorName, icpo.user_6, icpo.defaultworkorder, icpo.attachid from icpo inner join vendor on vendor.vennum = icpo.vennum where icpo.user_3 is not null and icpo.user_5 = 0 order by icpo.ponum asc";
+
+            DatabaseRepository testClass = new DatabaseRepository();
+            Assert.AreEqual(testClass.QuotesNeededQuery, expectedQuotesNeededQuery);
+        }
+
     }
 }

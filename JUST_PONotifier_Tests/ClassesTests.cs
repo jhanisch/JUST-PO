@@ -21,6 +21,8 @@ namespace JUST.Shared.Tests
         }
 
         #region Classes
+
+        #region PurchaseOrder
         [Test]
         public void Classes_PurchaseOrderExists()
         {
@@ -82,7 +84,9 @@ namespace JUST.Shared.Tests
             Assert.AreEqual(jobNumber, newObject.JobNumber);
             Assert.AreEqual(emptyList.Count, newObject.Attachments.Count);
         }
+        #endregion
 
+        #region Employee Lookup
         [Test]
         public void Classes_EmployeeExists()
         {
@@ -106,7 +110,9 @@ namespace JUST.Shared.Tests
             Assert.AreEqual(name, newObject.Name);
             Assert.AreEqual(emailAddress, newObject.EmailAddress);
         }
+        #endregion
 
+        #region Config
         [TestCase]
         public void Classes_ConfigInitializes()
         {
@@ -158,6 +164,8 @@ namespace JUST.Shared.Tests
         [TestCase("uid", "pwd", "fromEmailAddress", "fromEmailPassword", "fromEmailSMTP", "0", "MONITOR", "", "C:\\", "Monitor Email Address is Required in monitor mode")]
         [TestCase("uid", "pwd", "fromEmailAddress", "fromEmailPassword", "fromEmailSMTP", "0", "", "", "C:\\", "Mode is Required.")]
         [TestCase("uid", "pwd", "fromEmailAddress", "fromEmailPassword", "fromEmailSMTP", "0", null, "", "C:\\", "Mode is Required.")]
+        // MonitorEmailAddress
+        [TestCase("uid", "pwd", "fromEmailAddress", "fromEmailPassword", "fromEmailSMTP", "0", "monitor", null, "C:\\", "Monitor Email Address is Required in monitor mode")]
         public void Classes_Config_ThrowsExceptions(
             string uid, 
             string pwd, 
@@ -268,6 +276,35 @@ namespace JUST.Shared.Tests
                 Assert.IsEmpty(newObject.Mode);
             }
         }
+        #endregion
+
+        #region Quote Needed
+        [Test]
+        public void Classes_QuoteNeeded()
+        {
+            var newObject = new Quote();
+            Assert.AreEqual(String.Empty, newObject.WorkOrder);
+            Assert.AreEqual(String.Empty, newObject.WorkTicket);
+            Assert.AreEqual(String.Empty, newObject.CustomerName);
+            Assert.AreEqual(String.Empty, newObject.SiteName);
+            Assert.AreEqual(String.Empty, newObject.DescriptionOfWork);
+            Assert.AreEqual(String.Empty, newObject.TicketNote);
+        }
+
+        [TestCase("workOrder", "workTicket", "customerName", "siteName", "descriptionOfWork", "ticketNote")]
+        public void Classes_QuoteNeeded(string workOrder, string workTicket, string customerName, string siteName, string descriptionOfWork, string ticketNote)
+        {
+            var newObject = new Quote(workOrder, workTicket, customerName, siteName, descriptionOfWork, ticketNote);
+
+            Assert.AreEqual(workOrder, newObject.WorkOrder);
+            Assert.AreEqual(workTicket, newObject.WorkTicket);
+            Assert.AreEqual(customerName, newObject.CustomerName);
+            Assert.AreEqual(siteName, newObject.SiteName);
+            Assert.AreEqual(descriptionOfWork, newObject.DescriptionOfWork);
+            Assert.AreEqual(ticketNote, newObject.TicketNote);
+        }
+
+        #endregion
         #endregion
     }
 }

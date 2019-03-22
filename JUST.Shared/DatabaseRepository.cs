@@ -14,13 +14,16 @@ namespace JUST.Shared.DatabaseRepository
         private string POAttachmentsRootPath;
         private List<Employee> Employees = new List<Employee>();
         private string POQueryString = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3, icpo.user_4, icpo.user_5, icpo.defaultjobnum, vendor.name as vendorName, icpo.user_6, icpo.defaultworkorder, icpo.attachid from icpo inner join vendor on vendor.vennum = icpo.vennum where icpo.user_3 is not null and icpo.user_5 = 0 order by icpo.ponum asc";
+        private string QuotesNeededQueryString = "select dpwoassign.workorder workorder, dpwoassign.ticketnum ticketnum, customer.name customername, dpsite.sitenum sitenum, dpsite.name sitename, dporder.des workorderdescription, dpwoassign.user_17 ticketnote from dpwoassign, dporder, dpsite, customer where dpwoassign.user_15 = 1 and dpwoassign.ticketnum<> '' and dporder.workorder = dpwoassign.workorder and dpsite.sitenum = dpwoassign.sitenum and customer.cusnum = dpsite.cusnum";
 
         public string POQuery
         {
-            get
-            {
-                return POQueryString;
-            }
+            get { return POQueryString; }
+        }
+
+        public string QuotesNeededQuery
+        {
+            get { return QuotesNeededQueryString; }
         }
 
         public DatabaseRepository()
@@ -45,7 +48,7 @@ namespace JUST.Shared.DatabaseRepository
 
             if (cn == null)
             {
-                throw new Exception("No Database connection exists");
+                throw new Exception("GetAttachmentsForPO - No Database connection exists");
             }
 
             if (attachid.Trim().Length == 0)
@@ -195,8 +198,7 @@ namespace JUST.Shared.DatabaseRepository
             }
 
             List<PurchaseOrder> pos = new List<PurchaseOrder>();
-            var POQuery = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3, icpo.user_4, icpo.user_5, icpo.defaultjobnum, vendor.name as vendorName, icpo.user_6, icpo.defaultworkorder, icpo.attachid from icpo inner join vendor on vendor.vennum = icpo.vennum where icpo.user_3 is not null and icpo.user_5 = 0 order by icpo.ponum asc";
-            var cmd = new OdbcCommand(POQuery, dbConnection);
+            var cmd = new OdbcCommand(POQueryString, dbConnection);
             var reader = cmd.ExecuteReader();
 
             var buyerColumn = reader.GetOrdinal("buyer");
@@ -257,6 +259,43 @@ namespace JUST.Shared.DatabaseRepository
             }
 
             return result;
+        }
+
+        public List<Quote> GetQuotesNeeded()
+        {
+
+            //select dpwoassign.workorder workorder, dpwoassign.ticketnum ticketnum, customer.name customername, dpsite.sitenum sitenum, dpsite.name sitename, dporder.des, dpwoassign.user_17 ticketnote workorderdescription from dpwoassign, dporder, dpsite, customer where dpwoassign.user_15 = 1 and dpwoassign.ticketnum<> '' and dporder.workorder = dpwoassign.workorder and dpsite.sitenum = dpwoassign.sitenum and customer.cusnum = dpsite.cusnum
+            if (dbConnection == null)
+            {
+                throw new Exception("GetQuotesNeeded - No Database Connection");
+            }
+
+            var quotesNeeded = new List<Quote>();
+
+            var cmd = new OdbcCommand(QuotesNeededQueryString, dbConnection);
+            var reader = cmd.ExecuteReader();
+
+            var workOrderColumn = reader.GetOrdinal("workorder");
+            var workTicketColumn = reader.GetOrdinal("ticketnum");
+            var customerNameColumn = reader.GetOrdinal("customername");
+            var siteNumColumn = reader.GetOrdinal("sitenum");
+            var siteNameColumn = reader.GetOrdinal("sitename");
+            var descriptionOfWorkColumn = reader.GetOrdinal("workorderdescription");
+            var ticketNoteColumn = reader.GetOrdinal("ticketnote");
+
+            while (reader.Read())
+            {
+                var workOrder = reader.GetString(workOrderColumn);
+                var workTicket = reader.GetString(workTicketColumn);
+                var customerName = reader.GetString(customerNameColumn);
+                var siteName = reader.GetString(siteNameColumn);
+                var descriptionOfWork = reader.GetString(descriptionOfWorkColumn);
+                var ticketNote = reader.GetString(ticketNoteColumn);
+
+                quotesNeeded.Add(new Quote(workOrder, workTicket, customerName, siteName, descriptionOfWork, ticketNote));
+            }
+
+            return quotesNeeded;
         }
     }
 }

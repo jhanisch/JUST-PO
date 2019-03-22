@@ -1,9 +1,9 @@
-C:\Development\JUST-PO\JUST-PO\JUST.Shared\obj\Debug\JUST.Shared.csproj.CoreCompileInputs.cache
 C:\Development\JUST-PO\JUST-PO\JUST.Shared\bin\Debug\JUST.Shared.dll.config
 C:\Development\JUST-PO\JUST-PO\JUST.Shared\bin\Debug\JUST.Shared.dll
 C:\Development\JUST-PO\JUST-PO\JUST.Shared\bin\Debug\JUST.Shared.pdb
 C:\Development\JUST-PO\JUST-PO\JUST.Shared\bin\Debug\log4net.dll
 C:\Development\JUST-PO\JUST-PO\JUST.Shared\bin\Debug\log4net.xml
+C:\Development\JUST-PO\JUST-PO\JUST.Shared\obj\Debug\JUST.Shared.csproj.CoreCompileInputs.cache
 C:\Development\JUST-PO\JUST-PO\JUST.Shared\obj\Debug\JUST.Shared.dll
 C:\Development\JUST-PO\JUST-PO\JUST.Shared\obj\Debug\JUST.Shared.pdb
 C:\Development\JUST-PO\JUST-PO\JUST.Shared\obj\Debug\JUST.Shared.csprojResolveAssemblyReference.cache

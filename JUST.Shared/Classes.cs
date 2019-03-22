@@ -34,7 +34,7 @@ namespace JUST.Shared.Classes
         public string[] MonitorEmailAddresses;
         public string POAttachmentBasePath { get; private set; }
 
-        public void getConfiguration(ArrayList ValidModes)
+        public void getConfiguration(ArrayList ValidModes, Boolean AttachmentBasePathRequired = true)
         {
             string fromEmailPortString, modeString;
 
@@ -47,7 +47,7 @@ namespace JUST.Shared.Classes
 
             modeString = ConfigurationManager.AppSettings["Mode"];
             var MonitorEmailAddressList = ConfigurationManager.AppSettings["MonitorEmailAddress"];
-            if (MonitorEmailAddressList.Length > 0)
+            if (MonitorEmailAddressList != null && MonitorEmailAddressList.Length > 0)
             {
                 char[] delimiterChars = { ';', ',' };
                 MonitorEmailAddresses = MonitorEmailAddressList.Split(delimiterChars);
@@ -118,7 +118,7 @@ namespace JUST.Shared.Classes
                 }
             }
 
-            if (String.IsNullOrEmpty(POAttachmentBasePath))
+            if (AttachmentBasePathRequired && String.IsNullOrEmpty(POAttachmentBasePath))
             {
                 errorMessage.Append("Root Path to Attachments (AttachmentBasePath) is Required");
             }
@@ -273,5 +273,36 @@ namespace JUST.Shared.Classes
         public string WorkOrderNumber { get; set; }
         public string WorkOrderSite { get; set; }
         public IList<PurchaseOrderItem> PurchaseOrderItems { get; set; }
+    }
+
+    public class Quote
+    {
+        public string WorkOrder { get; set; }
+        public string WorkTicket { get; set; }
+        public string CustomerName { get; set; }
+        public string SiteName { get; set; }
+        public string DescriptionOfWork { get; set; }
+        public string TicketNote { get; set; }
+
+        public Quote()
+        {
+            WorkOrder = string.Empty;
+            WorkTicket = string.Empty;
+            CustomerName = string.Empty;
+            SiteName = string.Empty;
+            DescriptionOfWork = string.Empty;
+            TicketNote = string.Empty;
+        }
+
+        public Quote(string workOrder, string workTicket, string customerName, string siteName, string descriptionOfWork, string ticketNote)
+        {
+            WorkOrder = workOrder;
+            WorkTicket = workTicket;
+            CustomerName = customerName;
+            SiteName = siteName;
+            DescriptionOfWork = descriptionOfWork;
+            TicketNote = ticketNote;
+        }
+
     }
 }

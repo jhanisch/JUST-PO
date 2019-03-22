@@ -20,6 +20,8 @@ namespace JUST.Shared.DatabaseRepository
 
         List<Employee> GetEmployees();
 
+        List<Quote> GetQuotesNeeded();
+
         bool MarkPOAsNotified(string poNum);
     }
 }

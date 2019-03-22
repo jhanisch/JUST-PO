@@ -1,0 +1,13 @@
+C:\Development\JUST-PO\JUST-PO\Just.QuoteNeeded\obj\Debug\Just.QuoteNeeded.csprojResolveAssemblyReference.cache
+C:\Development\JUST-PO\JUST-PO\Just.QuoteNeeded\obj\Debug\Just.QuoteNeeded.csproj.CoreCompileInputs.cache
+C:\Development\JUST-PO\JUST-PO\Just.QuoteNeeded\bin\Debug\log4net.config
+C:\Development\JUST-PO\JUST-PO\Just.QuoteNeeded\bin\Debug\Just.QuoteNeeded.exe.config
+C:\Development\JUST-PO\JUST-PO\Just.QuoteNeeded\bin\Debug\Just.QuoteNeeded.exe
+C:\Development\JUST-PO\JUST-PO\Just.QuoteNeeded\bin\Debug\Just.QuoteNeeded.pdb
+C:\Development\JUST-PO\JUST-PO\Just.QuoteNeeded\bin\Debug\JUST.Shared.dll
+C:\Development\JUST-PO\JUST-PO\Just.QuoteNeeded\bin\Debug\log4net.dll
+C:\Development\JUST-PO\JUST-PO\Just.QuoteNeeded\bin\Debug\JUST.Shared.pdb
+C:\Development\JUST-PO\JUST-PO\Just.QuoteNeeded\bin\Debug\JUST.Shared.dll.config
+C:\Development\JUST-PO\JUST-PO\Just.QuoteNeeded\bin\Debug\log4net.xml
+C:\Development\JUST-PO\JUST-PO\Just.QuoteNeeded\obj\Debug\Just.QuoteNeeded.exe
+C:\Development\JUST-PO\JUST-PO\Just.QuoteNeeded\obj\Debug\Just.QuoteNeeded.pdb

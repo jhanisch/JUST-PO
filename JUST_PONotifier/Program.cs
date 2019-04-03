@@ -126,7 +126,7 @@ namespace JUST.PONotifier
                         }
 
                         if (((config.Mode == monitor) || (config.Mode == debug)) &&
-                            (config.MonitorEmailAddresses != null && config.MonitorEmailAddresses.Length > 0))
+                            (config.MonitorEmailAddresses != null && config.MonitorEmailAddresses.Count > 0))
                         {
                             foreach(string monitorEmailAddress in config.MonitorEmailAddresses)
                             {

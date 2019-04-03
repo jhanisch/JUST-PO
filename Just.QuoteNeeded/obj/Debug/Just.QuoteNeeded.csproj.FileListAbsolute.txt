@@ -11,3 +11,4 @@ C:\Development\JUST-PO\JUST-PO\Just.QuoteNeeded\bin\Debug\JUST.Shared.dll.config
 C:\Development\JUST-PO\JUST-PO\Just.QuoteNeeded\bin\Debug\log4net.xml
 C:\Development\JUST-PO\JUST-PO\Just.QuoteNeeded\obj\Debug\Just.QuoteNeeded.exe
 C:\Development\JUST-PO\JUST-PO\Just.QuoteNeeded\obj\Debug\Just.QuoteNeeded.pdb
+C:\Development\JUST-PO\JUST-PO\Just.QuoteNeeded\bin\Debug\Readme.txt

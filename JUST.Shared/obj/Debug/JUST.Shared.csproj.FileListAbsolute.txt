@@ -7,3 +7,4 @@ C:\Development\JUST-PO\JUST-PO\JUST.Shared\obj\Debug\JUST.Shared.csproj.CoreComp
 C:\Development\JUST-PO\JUST-PO\JUST.Shared\obj\Debug\JUST.Shared.dll
 C:\Development\JUST-PO\JUST-PO\JUST.Shared\obj\Debug\JUST.Shared.pdb
 C:\Development\JUST-PO\JUST-PO\JUST.Shared\obj\Debug\JUST.Shared.csprojResolveAssemblyReference.cache
+C:\Development\JUST-PO\JUST-PO\JUST.Shared\bin\Debug\Readme.txt

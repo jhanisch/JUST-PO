@@ -20,8 +20,14 @@ namespace JUST.Shared.Classes
             FromEmailSMTP = string.Empty;
             FromEmailPort = 25;
             Mode = string.Empty;
-            MonitorEmailAddresses = new string[0];
+            MonitorEmailAddresses = new ArrayList();
             POAttachmentBasePath = string.Empty;
+        }
+
+        public Config(bool modeRequired)
+            :base()
+        {
+            ModeRequired = modeRequired;
         }
 
         public string Uid { get; private set; }
@@ -31,10 +37,27 @@ namespace JUST.Shared.Classes
         public string FromEmailSMTP { get; private set; }
         public int? FromEmailPort { get; private set; }
         public string Mode { get; private set; }
-        public string[] MonitorEmailAddresses;
+        public ArrayList MonitorEmailAddresses;
+        public ArrayList HVACEmailAddresses;
+        public ArrayList PlumbingEmailAddresses;
         public string POAttachmentBasePath { get; private set; }
+        public bool ModeRequired { get; private set; } = true;
 
-        public void getConfiguration(ArrayList ValidModes, Boolean AttachmentBasePathRequired = true)
+        private ArrayList parseEmailAddressList(string emailAddressList)
+        {
+            ArrayList result = new ArrayList();
+
+            char[] delimiterChars = { ';', ',' };
+            var x = emailAddressList.Split(delimiterChars);
+            foreach (string address in x)
+            {
+                result.Add(address);
+            }
+
+            return result;
+        }
+
+        public bool getConfiguration(ArrayList ValidModes, Boolean AttachmentBasePathRequired = true)
         {
             string fromEmailPortString, modeString;
 
@@ -49,8 +72,19 @@ namespace JUST.Shared.Classes
             var MonitorEmailAddressList = ConfigurationManager.AppSettings["MonitorEmailAddress"];
             if (MonitorEmailAddressList != null && MonitorEmailAddressList.Length > 0)
             {
-                char[] delimiterChars = { ';', ',' };
-                MonitorEmailAddresses = MonitorEmailAddressList.Split(delimiterChars);
+                MonitorEmailAddresses = parseEmailAddressList(MonitorEmailAddressList);
+            }
+
+            var HVACEmailAddressList = ConfigurationManager.AppSettings["HEmailAddresses"];
+            if (HVACEmailAddressList != null && HVACEmailAddressList.Length > 0)
+            {
+                HVACEmailAddresses = parseEmailAddressList(HVACEmailAddressList);
+            }
+
+            var PlumbingEmailAddressList = ConfigurationManager.AppSettings["PEmailAddresses"];
+            if (PlumbingEmailAddressList != null && PlumbingEmailAddressList.Length > 0)
+            {
+                PlumbingEmailAddresses = parseEmailAddressList(PlumbingEmailAddressList);
             }
 
             POAttachmentBasePath = ConfigurationManager.AppSettings["POAttachmentBasePath"];
@@ -96,23 +130,29 @@ namespace JUST.Shared.Classes
                 }
             }
 
-            if (String.IsNullOrEmpty(modeString))
+            if (ModeRequired)
             {
-                errorMessage.Append("Mode is Required.");
+                if (String.IsNullOrEmpty(modeString))
+                {
+                    errorMessage.Append("Mode is Required.");
+                }
+                else
+                {
+                    Mode = modeString.ToLower();
+                    if (!ValidModes.Contains(Mode))
+                    {
+                        errorMessage.Append(String.Format("'{0}' is not a valid Mode.  Valid modes are 'debug', 'live' and 'monitor'", Mode));
+                    }
+                }
             }
             else
             {
-                Mode = modeString.ToLower();
-                if (!ValidModes.Contains(Mode))
-                {
-                    errorMessage.Append(String.Format("'{0}' is not a valid Mode.  Valid modes are 'debug', 'live' and 'monitor'", Mode));
-                }
+                Mode = string.Empty;
             }
-
 
             if (Mode == monitor)
             {
-                if (MonitorEmailAddresses == null || MonitorEmailAddresses.Length == 0)
+                if (MonitorEmailAddresses == null || MonitorEmailAddresses.Count == 0)
                 {
                     errorMessage.Append("Monitor Email Address is Required in monitor mode");
                 }
@@ -127,6 +167,8 @@ namespace JUST.Shared.Classes
             {
                 throw new Exception(errorMessage.ToString());
             }
+
+            return true;
             #endregion
         }
     }
@@ -283,10 +325,11 @@ namespace JUST.Shared.Classes
         public string SiteName { get; set; }
         public string DescriptionOfWork { get; set; }
         public string TicketNote { get; set; }
-        public string ServicePerson { get; set; }
+        public string ServiceTech { get; set; }
         public string Manufacturer { get; set; }
         public string Model { get; set; }
         public string SerialNumber { get; set; }
+        public string WorkDate { get; set; }
 
         public Quote()
         {
@@ -296,10 +339,11 @@ namespace JUST.Shared.Classes
             SiteName = string.Empty;
             DescriptionOfWork = string.Empty;
             TicketNote = string.Empty;
-            ServicePerson = string.Empty;
+            ServiceTech = string.Empty;
             Manufacturer = string.Empty;
             Model = string.Empty;
             SerialNumber = string.Empty;
+            WorkDate = string.Empty;
         }
 
         public Quote(string workOrder, 
@@ -311,7 +355,8 @@ namespace JUST.Shared.Classes
             string servicePerson,
             string manufacturer,
             string model,
-            string serialNumber)
+            string serialNumber,
+            string workDate)
         {
             WorkOrder = workOrder;
             WorkTicket = workTicket;
@@ -319,10 +364,11 @@ namespace JUST.Shared.Classes
             SiteName = siteName;
             DescriptionOfWork = descriptionOfWork;
             TicketNote = ticketNote;
-            ServicePerson = servicePerson;
+            ServiceTech = servicePerson;
             Manufacturer = manufacturer;
             Model = model;
             SerialNumber = serialNumber;
+            WorkDate = workDate;
         }
 
     }

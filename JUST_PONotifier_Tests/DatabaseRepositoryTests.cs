@@ -49,7 +49,7 @@ namespace JUST_PONotifier_Tests
         [TestCase]
         public void DatabaseQueries_VerifyQuotesNeededQueryy()
         {
-            string expectedQuotesNeededQuery = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3, icpo.user_4, icpo.user_5, icpo.defaultjobnum, vendor.name as vendorName, icpo.user_6, icpo.defaultworkorder, icpo.attachid from icpo inner join vendor on vendor.vennum = icpo.vennum where icpo.user_3 is not null and icpo.user_5 = 0 order by icpo.ponum asc";
+            string expectedQuotesNeededQuery = "select dpwoassign.workorder workorder, dpwoassign.ticketnum ticketnum, customer.name customername, dpsite.sitenum sitenum, dpsite.name sitename, dporder.des workorderdescription, dpwoassign.user_17 ticketnote, dpwoassign.user_2 model, dpwoassign.user_3 serialnumber, dpwoassign.user_4 manufacturer, dpwoassign.person servicetech, dpwoassign.date workdate from dpwoassign, dporder, dpsite, customer where dpwoassign.user_15 = 1 and dpwoassign.user_18 = 0 and dpwoassign.ticketnum<> '' and dporder.workorder = dpwoassign.workorder and dpsite.sitenum = dpwoassign.sitenum and customer.cusnum = dpsite.cusnum";
 
             DatabaseRepository testClass = new DatabaseRepository();
             Assert.AreEqual(testClass.QuotesNeededQuery, expectedQuotesNeededQuery);

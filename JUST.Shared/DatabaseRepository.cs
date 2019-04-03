@@ -14,7 +14,7 @@ namespace JUST.Shared.DatabaseRepository
         private string POAttachmentsRootPath;
         private List<Employee> Employees = new List<Employee>();
         private string POQueryString = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3, icpo.user_4, icpo.user_5, icpo.defaultjobnum, vendor.name as vendorName, icpo.user_6, icpo.defaultworkorder, icpo.attachid from icpo inner join vendor on vendor.vennum = icpo.vennum where icpo.user_3 is not null and icpo.user_5 = 0 order by icpo.ponum asc";
-        private string QuotesNeededQueryString = "select dpwoassign.workorder workorder, dpwoassign.ticketnum ticketnum, customer.name customername, dpsite.sitenum sitenum, dpsite.name sitename, dporder.des workorderdescription, dpwoassign.user_17 ticketnote, dpwoassign.user_2 model, dpwoassign.user_3 serialnumber, dpwoassign.user_4 manufacturer from dpwoassign, dporder, dpsite, customer where dpwoassign.user_15 = 1 and dpwoassign.ticketnum<> '' and dporder.workorder = dpwoassign.workorder and dpsite.sitenum = dpwoassign.sitenum and customer.cusnum = dpsite.cusnum";
+        private string QuotesNeededQueryString = "select dpwoassign.workorder workorder, dpwoassign.ticketnum ticketnum, customer.name customername, dpsite.sitenum sitenum, dpsite.name sitename, dporder.des workorderdescription, dpwoassign.user_17 ticketnote, dpwoassign.user_2 model, dpwoassign.user_3 serialnumber, dpwoassign.user_4 manufacturer, dpwoassign.person servicetech, dpwoassign.date workdate from dpwoassign, dporder, dpsite, customer where dpwoassign.user_15 = 1 and dpwoassign.user_18 = 0 and dpwoassign.ticketnum<> '' and dporder.workorder = dpwoassign.workorder and dpsite.sitenum = dpwoassign.sitenum and customer.cusnum = dpsite.cusnum";
 
         public string POQuery
         {
@@ -261,10 +261,31 @@ namespace JUST.Shared.DatabaseRepository
             return result;
         }
 
+        public bool MarkQuoteAsNotified(Quote quote)
+        {
+            bool result = true;
+
+            try
+            {
+                log.Info("MarkQuoteAsNotified");
+                var updateCommand = string.Format("update dpwoassign set \"user_18\" = 1 where workorder = '{0}' and ticketnum = '{1}' and person = '{2}' and user_15 = 1 and user_18 = 0", quote.WorkOrder, quote.WorkTicket, quote.ServiceTech);
+                log.Info(updateCommand);
+                var cmd = new OdbcCommand(updateCommand, dbConnection);
+                cmd.ExecuteNonQuery();
+            }
+            catch (Exception ex)
+            {
+                log.Error(string.Format("Error marking Quote for work order {0} as notified.", quote.WorkOrder));
+                log.Error(ex.Message);
+                log.Error(ex.InnerException.Message);
+                result = false;
+            }
+
+            return result;
+        }
+
         public List<Quote> GetQuotesNeeded()
         {
-
-            //select dpwoassign.workorder workorder, dpwoassign.ticketnum ticketnum, customer.name customername, dpsite.sitenum sitenum, dpsite.name sitename, dporder.des, dpwoassign.user_17 ticketnote workorderdescription from dpwoassign, dporder, dpsite, customer where dpwoassign.user_15 = 1 and dpwoassign.ticketnum<> '' and dporder.workorder = dpwoassign.workorder and dpsite.sitenum = dpwoassign.sitenum and customer.cusnum = dpsite.cusnum
             if (dbConnection == null)
             {
                 throw new Exception("GetQuotesNeeded - No Database Connection");
@@ -285,6 +306,8 @@ namespace JUST.Shared.DatabaseRepository
             var makeColumn = reader.GetOrdinal("manufacturer");
             var modelColumn = reader.GetOrdinal("model");
             var serialNumberColumn = reader.GetOrdinal("serialnumber");
+            var serviceTechColumn = reader.GetOrdinal("servicetech");
+            var workDateColumn = reader.GetOrdinal("workdate");
 
             while (reader.Read())
             {
@@ -297,8 +320,11 @@ namespace JUST.Shared.DatabaseRepository
                 var make = reader.GetString(makeColumn);
                 var model = reader.GetString(modelColumn);
                 var serialNumber = reader.GetString(serialNumberColumn);
+                var serviceTech = reader.GetString(serviceTechColumn);
+                var workDate = reader.GetDate(workDateColumn).ToShortDateString();
+                log.Info("workDate: " + workDate);
 
-                quotesNeeded.Add(new Quote(workOrder, workTicket, customerName, siteName, descriptionOfWork, ticketNote, string.Empty, make, model, serialNumber));
+                quotesNeeded.Add(new Quote(workOrder, workTicket, customerName, siteName, descriptionOfWork, ticketNote, serviceTech, make, model, serialNumber, workDate));
             }
 
             return quotesNeeded;

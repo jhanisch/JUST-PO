@@ -122,12 +122,13 @@ namespace JUST.Shared.Tests
             Assert.AreEqual(newObject.Uid, string.Empty);
             Assert.AreEqual(newObject.Pwd, string.Empty);
             Assert.AreEqual(newObject.POAttachmentBasePath, string.Empty);
-            Assert.AreEqual(newObject.MonitorEmailAddresses.Length, 0);
+            Assert.AreEqual(newObject.MonitorEmailAddresses.Count, 0);
             Assert.AreEqual(newObject.Mode, string.Empty);
             Assert.AreEqual(newObject.FromEmailSMTP, string.Empty);
             Assert.AreEqual(newObject.FromEmailPort, 25);
             Assert.AreEqual(newObject.FromEmailPassword, string.Empty);
             Assert.AreEqual(newObject.FromEmailAddress, string.Empty);
+            Assert.AreEqual(newObject.ModeRequired, true);
         }
         
         //UID Validation
@@ -276,6 +277,78 @@ namespace JUST.Shared.Tests
                 Assert.IsEmpty(newObject.Mode);
             }
         }
+
+        [TestCase(true)]
+        [TestCase(false)]
+        public void Classes_Config_SetsModeRequired(bool required)
+        {
+            var newObject = new Config(required);
+
+            Assert.AreEqual(newObject.ModeRequired, required);
+        }
+
+        [TestCase("uid", "pwd", "fromEmailAddress", "fromEmailPassword", "fromEmailSMTP", "0", "kjhkjh", null, "C:\\")]
+        public void Classes_Config_DoesNotRequireMode(
+            string uid,
+            string pwd,
+            string fromEmailAddress,
+            string fromEmailPassword,
+            string fromEmailSMTP,
+            string fromEmailPort,
+            string mode,
+            string monitorEmailAddress,
+            string poAttachmentBasePath)
+        {
+            ConfigurationManager.AppSettings["Uid"] = uid;
+            ConfigurationManager.AppSettings["Pwd"] = pwd;
+            ConfigurationManager.AppSettings["FromEmailAddress"] = fromEmailAddress;
+            ConfigurationManager.AppSettings["FromEmailPassword"] = fromEmailPassword;
+            ConfigurationManager.AppSettings["FromEmailSMTP"] = fromEmailSMTP;
+            ConfigurationManager.AppSettings["FromEmailPort"] = fromEmailPort;
+            ConfigurationManager.AppSettings["Mode"] = mode;
+            ConfigurationManager.AppSettings["MonitorEmailAddress"] = monitorEmailAddress;
+            ConfigurationManager.AppSettings["POAttachmentBasePath"] = poAttachmentBasePath;
+
+            var newObject = new Config(false);
+
+            var result = newObject.getConfiguration(ValidModes);
+
+            Assert.IsTrue(result);
+            Assert.AreEqual(string.Empty, newObject.Mode);
+            Assert.IsFalse(newObject.ModeRequired);
+        }
+
+        [TestCase("uid", "pwd", "fromEmailAddress", "fromEmailPassword", "fromEmailSMTP", "0", "monitor", "a;b", "C:\\")]
+        [TestCase("uid", "pwd", "fromEmailAddress", "fromEmailPassword", "fromEmailSMTP", "0", "monitor", "a,b", "C:\\")]
+        public void Classes_Config_ParsesEmailAddresses(
+            string uid,
+            string pwd,
+            string fromEmailAddress,
+            string fromEmailPassword,
+            string fromEmailSMTP,
+            string fromEmailPort,
+            string mode,
+            string monitorEmailAddress,
+            string poAttachmentBasePath)
+        {
+            ConfigurationManager.AppSettings["Uid"] = uid;
+            ConfigurationManager.AppSettings["Pwd"] = pwd;
+            ConfigurationManager.AppSettings["FromEmailAddress"] = fromEmailAddress;
+            ConfigurationManager.AppSettings["FromEmailPassword"] = fromEmailPassword;
+            ConfigurationManager.AppSettings["FromEmailSMTP"] = fromEmailSMTP;
+            ConfigurationManager.AppSettings["FromEmailPort"] = fromEmailPort;
+            ConfigurationManager.AppSettings["Mode"] = mode;
+            ConfigurationManager.AppSettings["MonitorEmailAddress"] = monitorEmailAddress;
+            ConfigurationManager.AppSettings["POAttachmentBasePath"] = poAttachmentBasePath;
+
+            var newObject = new Config(false);
+
+            var result = newObject.getConfiguration(ValidModes);
+
+            Assert.IsTrue(result);
+            Assert.AreEqual(2, newObject.MonitorEmailAddresses.Count);
+        }
+
         #endregion
 
         #region Quote Needed
@@ -289,7 +362,7 @@ namespace JUST.Shared.Tests
             Assert.AreEqual(String.Empty, newObject.SiteName);
             Assert.AreEqual(String.Empty, newObject.DescriptionOfWork);
             Assert.AreEqual(String.Empty, newObject.TicketNote);
-            Assert.AreEqual(String.Empty, newObject.ServicePerson);
+            Assert.AreEqual(String.Empty, newObject.ServiceTech);
             Assert.AreEqual(String.Empty, newObject.Manufacturer);
             Assert.AreEqual(String.Empty, newObject.Model);
             Assert.AreEqual(String.Empty, newObject.SerialNumber);
@@ -298,7 +371,7 @@ namespace JUST.Shared.Tests
         [TestCase("workOrder", "workTicket", "customerName", "siteName", "descriptionOfWork", "ticketNote", "serviceperson", "make", "model", "serialnumber")]
         public void Classes_QuoteNeeded(string workOrder, string workTicket, string customerName, string siteName, string descriptionOfWork, string ticketNote, string servicePerson, string manufacturer, string model, string serialNumber)
         {
-            var newObject = new Quote(workOrder, workTicket, customerName, siteName, descriptionOfWork, ticketNote, servicePerson, manufacturer, model, serialNumber);
+            var newObject = new Quote(workOrder, workTicket, customerName, siteName, descriptionOfWork, ticketNote, servicePerson, manufacturer, model, serialNumber, string.Empty);
 
             Assert.AreEqual(workOrder, newObject.WorkOrder);
             Assert.AreEqual(workTicket, newObject.WorkTicket);
@@ -306,7 +379,7 @@ namespace JUST.Shared.Tests
             Assert.AreEqual(siteName, newObject.SiteName);
             Assert.AreEqual(descriptionOfWork, newObject.DescriptionOfWork);
             Assert.AreEqual(ticketNote, newObject.TicketNote);
-            Assert.AreEqual(servicePerson, newObject.ServicePerson);
+            Assert.AreEqual(servicePerson, newObject.ServiceTech);
             Assert.AreEqual(manufacturer, newObject.Manufacturer);
             Assert.AreEqual(model, newObject.Model);
             Assert.AreEqual(serialNumber, newObject.SerialNumber);

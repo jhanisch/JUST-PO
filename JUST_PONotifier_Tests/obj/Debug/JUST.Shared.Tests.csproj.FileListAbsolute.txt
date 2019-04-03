@@ -26,3 +26,4 @@ C:\Development\JUST-PO\JUST-PO\JUST_PONotifier_Tests\obj\Debug\JUST.Shared.Tests
 C:\Development\JUST-PO\JUST-PO\JUST_PONotifier_Tests\obj\Debug\JUST.Shared.Tests.csproj.CoreCompileInputs.cache
 C:\Development\JUST-PO\JUST-PO\JUST_PONotifier_Tests\obj\Debug\JUST_PONotifier_Tests.dll
 C:\Development\JUST-PO\JUST-PO\JUST_PONotifier_Tests\obj\Debug\JUST_PONotifier_Tests.pdb
+C:\Development\JUST-PO\JUST-PO\JUST_PONotifier_Tests\bin\Debug\Readme.txt

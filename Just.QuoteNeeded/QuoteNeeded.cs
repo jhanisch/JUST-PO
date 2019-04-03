@@ -21,8 +21,10 @@ namespace Just.QuoteNeeded
 
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         private static ArrayList ValidModes = new ArrayList() { debug, live, monitor };
-        private static Config config = new Config();
+        private static Config config = new Config(false);
         private static string RunDate = DateTime.Now.ToShortDateString();
+        private static string DefaultHVACMessage = "No new HVAC Work Tickets requiring a quote were found.";
+        private static string DefaultPlumbingMessage = "No new Plumbing Work Tickets requiring a quote were found.";
 
         private static string EmailSubject = @"Quotes Needed - {0}";
         private static string EmailBodyHeader = @"<body style = ""margin-left: 20px; margin-right:20px"" >
@@ -49,7 +51,7 @@ namespace Just.QuoteNeeded
         private static string EmailBodyTableWorkOrderLine = @"
            <tr>
               <td></td>
-              <td colspan=""11"" style=""text-align: left; font-size: 20px""><strong>Work Order {0}</strong></td>
+              <td colspan=""11"" style=""text-align: left; font-size: 20px""><strong>{0} {1}</strong></td>
            </tr>";
 
         private static string EmailBodyTableDoubleLineItem = @"
@@ -128,24 +130,35 @@ namespace Just.QuoteNeeded
             log.Info("[ProcessQuotesNeeded] Found " + hvacQuotes.Count.ToString() + " HVAC quotes to notify");
             log.Info("[ProcessQuotesNeeded] Found " + plumbingQuotes.Count.ToString() + " Plumbing quotes to notify");
 
-            var emailBody = FormatEmailBody(plumbingQuotes);
-            log.Info(emailBody);
-
             var emailSubject = string.Format(EmailSubject, RunDate);
-            Utils.sendEmail(config, "notifications@justserviceinc.com", emailSubject, FormatEmailBody(plumbingQuotes));
-            Utils.sendEmail(config, "notifications@justserviceinc.com", emailSubject, FormatEmailBody(hvacQuotes));
+            if (Utils.sendEmail(config, config.PlumbingEmailAddresses, emailSubject, FormatEmailBody(plumbingQuotes, dbRepository, DefaultPlumbingMessage)))
+            {
+                foreach(Quote quote in hvacQuotes)
+                {
+                    dbRepository.MarkQuoteAsNotified(quote);
+                }
+            }
+
+            if (Utils.sendEmail(config, config.HVACEmailAddresses, emailSubject, FormatEmailBody(hvacQuotes, dbRepository, DefaultHVACMessage)))
+            {
+                foreach(Quote quote in plumbingQuotes)
+                {
+                    dbRepository.MarkQuoteAsNotified(quote);
+                }
+            }
         }
 
-        private static string FormatEmailBody(List<Quote> quotes)
+        private static string FormatEmailBody(List<Quote> quotes, DatabaseRepository dbRepository, string defaultMessage)
         {
-            log.Info("start FormatEmailBody");
             string date = DateTime.Now.ToShortDateString();
+
             var emailBody = string.Format(EmailBodyHeader, RunDate);
-            log.Info("[FormatEmailBody 2] " + emailBody);
 
             if (quotes.Count == 0)
             {
-                return string.Empty;
+                emailBody += string.Format(EmailBodyTableWorkOrderLine, defaultMessage, String.Empty);
+                emailBody += EmailBodyFooter;
+                return emailBody;
             }
 
             long row = 1;
@@ -153,12 +166,13 @@ namespace Just.QuoteNeeded
 
             foreach (Quote quote in quotes)
             {
-                emailBody += string.Format(EmailBodyTableWorkOrderLine, quote.WorkOrder);
+                emailBody += string.Format(EmailBodyTableWorkOrderLine, "Work Order", quote.WorkOrder);
                 //, quote.WorkTicket, quote.CustomerName, quote.SiteName, quote.DescriptionOfWork, quote.TicketNote);
-                log.Info("[FormatEmailBody 3] " + emailBody);
+//                log.Info("[FormatEmailBody 3] " + emailBody);
 
                 emailBody += string.Format(EmailBodyTableDoubleLineItem, "Work Ticket", quote.WorkTicket, "Site Name", quote.SiteName);
                 emailBody += string.Format(EmailBodyTableDoubleLineItem, "Manaufactuer/Model", quote.Manufacturer + " / " + quote.Model, "Serial Number", quote.SerialNumber);
+                emailBody += (quote.ServiceTech.Length > 0) ? string.Format(EmailBodyTableSingleLineItem, "Service Person", EmployeeLookup.FindEmployeeFromAllEmployees(dbRepository.GetEmployees(), quote.ServiceTech).Name) : string.Empty;
                 emailBody += (quote.DescriptionOfWork.Length > 0) ? string.Format(EmailBodyTableSingleLineItem, "Original Description", quote.DescriptionOfWork) : string.Empty;            
                 emailBody += (quote.TicketNote.Length > 0) ? string.Format(EmailBodyTableSingleLineItem, "Ticket Note", quote.TicketNote) : string.Empty;
 
@@ -167,8 +181,7 @@ namespace Just.QuoteNeeded
             }
 
             emailBody += EmailBodyFooter;
-
-            log.Info(emailBody);
+//            log.Info(emailBody);
 
             return emailBody;
 

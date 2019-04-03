@@ -1,5 +1,6 @@
 ﻿using JUST.Shared.Classes;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -57,10 +58,12 @@ namespace JUST.Shared.Utilities
 
     public static class Utils
     {
-        public static bool sendEmail(Config config, string toEmailAddress, string subject, string emailBody)
+        private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
+        public static bool sendEmail(Config config, ArrayList toEmailAddresses, string subject, string emailBody)
         {
             bool result = true;
-            if (toEmailAddress.Length == 0)
+            if (toEmailAddresses.Count == 0)
             {
                 return false;
             }
@@ -70,7 +73,10 @@ namespace JUST.Shared.Utilities
                 using (MailMessage mail = new MailMessage())
                 {
                     mail.From = new MailAddress(config.FromEmailAddress, "New Job Notification");
-                    mail.To.Add(toEmailAddress);
+                    foreach (string emailAddress in toEmailAddresses)
+                    {
+                        mail.To.Add(emailAddress);
+                    }
                     mail.Subject = subject;
                     mail.Body = emailBody;
                     mail.IsBodyHtml = true;
@@ -83,7 +89,7 @@ namespace JUST.Shared.Utilities
                     }
                 }
             }
-            catch (Exception x)
+            catch (Exception)
             {
                 result = false;
             }

@@ -55,5 +55,10 @@
     <Reference Include="System.Security" />
     <Reference Include="System.Web.Extensions" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="Readme.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

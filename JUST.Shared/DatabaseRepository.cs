@@ -329,5 +329,20 @@ namespace JUST.Shared.DatabaseRepository
 
             return quotesNeeded;
         }
+
+        public List<AgedReceivable> GetAgedReceivables()
+        {
+            var testList = new List<AgedReceivable>();
+            var ar = new AgedReceivable("Invoice Number", "Customer Name", DateTime.Now, 100.00M);
+            testList.Add(ar);
+            testList.Add(ar);
+            testList.Add(ar);
+            testList.Add(ar);
+            testList.Add(ar);
+
+            return testList;
+
+//            return new List<AgedReceivable>();
+        }
     }
 }

@@ -17,6 +17,7 @@
 /Users/f1nut/Projects/JUST/PONotifier/JUST_PONotifier/bin/Debug/JUST_PONotifier.pdb
 /Users/f1nut/Projects/JUST/PONotifier/JUST_PONotifier/bin/Debug/log4net.dll
 /Users/f1nut/Projects/JUST/PONotifier/JUST_PONotifier/bin/Debug/log4net.xml
+C:\Development\JUST-PO\JUST-PO\JUST_PONotifier\bin\Debug\Readme.txt
 C:\Development\JUST-PO\JUST-PO\JUST_PONotifier\bin\Debug\log4net.config
 C:\Development\JUST-PO\JUST-PO\JUST_PONotifier\bin\Debug\JUST_PONotifier.exe.config
 C:\Development\JUST-PO\JUST-PO\JUST_PONotifier\bin\Debug\JUST_PONotifier.exe
@@ -30,4 +31,3 @@ C:\Development\JUST-PO\JUST-PO\JUST_PONotifier\obj\x86\Debug\JUST_PONotifier.csp
 C:\Development\JUST-PO\JUST-PO\JUST_PONotifier\obj\x86\Debug\JUST_PONotifier.csproj.CoreCompileInputs.cache
 C:\Development\JUST-PO\JUST-PO\JUST_PONotifier\obj\x86\Debug\JUST_PONotifier.exe
 C:\Development\JUST-PO\JUST-PO\JUST_PONotifier\obj\x86\Debug\JUST_PONotifier.pdb
-C:\Development\JUST-PO\JUST-PO\JUST_PONotifier\bin\Debug\Readme.txt

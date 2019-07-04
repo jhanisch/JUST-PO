@@ -22,6 +22,8 @@ namespace JUST.Shared.DatabaseRepository
 
         List<Quote> GetQuotesNeeded();
 
+        List<AgedReceivable> GetAgedReceivables();
+
         bool MarkPOAsNotified(string poNum);
     }
 }

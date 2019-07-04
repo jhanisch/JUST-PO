@@ -5,3 +5,11 @@
 JUST_PONotifier/obj/*
 JUST_PONotifier/bin/*
 JUST_PONotifier/Properties/*
+Just.AgedReceivables/bin/*
+Just.AgedReceivables/obj/*
+Just.QuoteNeeded/bin/*
+Just.QuoteNeeded/obj/*
+Just.Shared/bin/*
+Just.Shared/obj/*
+JUST_PONotifier_Tests/bin/*
+JUST_PONotifier_Tests/obj/*

@@ -386,6 +386,18 @@ namespace JUST.Shared.Tests
 
         }
 
+        #region Quote Needed
+        [Test]
+        public void Classes_AgedReceivables()
+        {
+            var newObject = new AgedReceivable();
+            Assert.AreEqual(String.Empty, newObject.InvoiceNumber);
+            Assert.AreEqual(String.Empty, newObject.CustomerName);
+            Assert.AreEqual(0.00M, newObject.AgedAmount);
+            Assert.AreEqual(DateTime.Now.ToShortDateString(), newObject.InvoiceDate);
+        }
+        #endregion
+
         #endregion
         #endregion
     }

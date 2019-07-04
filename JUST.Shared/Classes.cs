@@ -372,4 +372,31 @@ namespace JUST.Shared.Classes
         }
 
     }
+
+    public class AgedReceivable
+    {
+        public string InvoiceNumber { get; set; }
+        public string CustomerName { get; set; }
+        public string InvoiceDate { get; set; }
+        public decimal AgedAmount { get; set; }
+
+        public AgedReceivable()
+        {
+            InvoiceNumber = string.Empty;
+            CustomerName = string.Empty;
+            InvoiceDate = DateTime.Now.ToShortDateString();
+            AgedAmount = 0.00M;
+        }
+
+        public AgedReceivable(string invoiceNumber,
+            string customerName,
+            DateTime invoiceDate,
+            decimal agedAmount)
+        {
+            InvoiceNumber = invoiceNumber;
+            CustomerName = customerName;
+            InvoiceDate = invoiceDate.ToShortDateString();
+            AgedAmount = agedAmount;
+        }
+    }
 }

@@ -89,9 +89,10 @@ namespace JUST.Shared.Utilities
                     }
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 result = false;
+                log.Debug("[SendEmail] - " + ex.Message);
             }
 
             return result;

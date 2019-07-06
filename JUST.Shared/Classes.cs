@@ -375,28 +375,40 @@ namespace JUST.Shared.Classes
 
     public class AgedReceivable
     {
-        public string InvoiceNumber { get; set; }
+        public string CustomerNumber { get; set; }
         public string CustomerName { get; set; }
-        public string InvoiceDate { get; set; }
-        public decimal AgedAmount { get; set; }
+        public string InvoiceNumber { get; set; }
+        public DateTime InvoiceDate { get; set; }
+        public string JobNumber { get; set; }
+        public string WorkOrderNumber { get; set; }
+        public decimal AmountDue { get; set; }
 
         public AgedReceivable()
         {
+            CustomerNumber = string.Empty;
             InvoiceNumber = string.Empty;
             CustomerName = string.Empty;
-            InvoiceDate = DateTime.Now.ToShortDateString();
-            AgedAmount = 0.00M;
+            InvoiceDate = DateTime.Now;
+            WorkOrderNumber = string.Empty;
+            JobNumber = string.Empty;
+            AmountDue = 0.00M;
         }
 
-        public AgedReceivable(string invoiceNumber,
+        public AgedReceivable(string customerNumber,
             string customerName,
+            string invoiceNumber,
             DateTime invoiceDate,
+            string jobNumber,
+            string workOrderNumber,
             decimal agedAmount)
         {
-            InvoiceNumber = invoiceNumber;
+            CustomerNumber = customerNumber;
             CustomerName = customerName;
-            InvoiceDate = invoiceDate.ToShortDateString();
-            AgedAmount = agedAmount;
+            InvoiceNumber = invoiceNumber;
+            InvoiceDate = invoiceDate;
+            JobNumber = jobNumber;
+            WorkOrderNumber = workOrderNumber;
+            AmountDue = agedAmount;
         }
     }
 }

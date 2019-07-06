@@ -53,7 +53,7 @@ namespace Just.AgedReceivables
         private static string EmailBodyTableCustomerLine = @"
            <tr>
               <td></td>
-              <td colspan=""11"" style=""text-align: left; font-size: 20px""><strong>{0}</strong></td>
+              <td colspan=""11"" style=""text-align: left; font-size: 20px""><strong>{0} {1}</strong></td>
            </tr>";
 
         private static string EmailBodyDetailLine = @"
@@ -62,7 +62,7 @@ namespace Just.AgedReceivables
               <td colspan=""2"" style=""text-align: right; padding: 5px 10px 5px 5px"">{0}</td>
               <td colspan=""3"" style=""text-align: left; padding-left: 10px "">{1}</td>
               <td colspan=""2"" style=""text-align: right; padding: 5px 10px 5px 5px"">{2}</td>
-              <td colspan=""3"" style=""text-align: left; padding-left: 10px"">{3}</td>
+              <td colspan=""3"" style=""text-align: right; padding: 5px 10px 5px 5px"">{3}</td>
            </tr>";
 
         private static string EmailBodyFooter = @"</table></body>";
@@ -89,6 +89,7 @@ namespace Just.AgedReceivables
         private static void ProcessAgedReceivables()
         {
             OdbcConnection cn;
+            var lastCustomerNumber = String.Empty;
             var notifiedlist = new ArrayList();
 
             // user_1 = receiving rack location
@@ -111,25 +112,37 @@ namespace Just.AgedReceivables
             log.Info("[ProcessAgedReceivables] Connection to database opened successfully");
             var dbRepository = new DatabaseRepository(cn, log, null);
 
-            var agedReceivables = dbRepository.GetAgedReceivables();
+            var allOpenInvoices = dbRepository.GetAgedReceivables();
             var emailSubject = string.Format(EmailSubject, DateTime.Now.ToShortDateString());
             var emailBody = string.Format(EmailBodyHeader, DateTime.Now.ToShortDateString());
-            log.Info("[ProcessAgedReceivables] Found " + agedReceivables.Count() + " aged receivables to notify.");
+            log.Info("[ProcessAgedReceivables] Found " + allOpenInvoices.Count() + " open invoices to process.");
+
+            var agedReceivables = from invoice in allOpenInvoices
+                                  where invoice.InvoiceDate < DateTime.Now.AddDays(-60)
+                                  orderby invoice.CustomerName ascending, invoice.InvoiceDate ascending
+                                  select invoice;
 
             if (agedReceivables.Count() > 0)
             {
-                emailBody += EmailBodyTableHr;
+                log.Info("[ProcessAgedReceivables] Found " + agedReceivables.Count() + " aged invoices >= 60 days old to notify.");
 
                 foreach (AgedReceivable ar in agedReceivables)
                 {
-                    emailBody += string.Format(EmailBodyTableCustomerLine, ar.CustomerName);
-                    emailBody += string.Format(EmailBodyDetailLine, "Invoice #:", ar.InvoiceNumber, ar.InvoiceDate, ar.AgedAmount.ToString("C"));
-                    emailBody += EmailBodyTableHr;
+                    if (ar.CustomerNumber != lastCustomerNumber)
+                    {
+                        lastCustomerNumber = ar.CustomerNumber;
+                        emailBody += EmailBodyTableHr;
+                        emailBody += string.Format(EmailBodyTableCustomerLine, ar.CustomerName, "(" + ar.CustomerNumber + ")");
+                    }
+
+                    emailBody += string.Format(EmailBodyDetailLine, "Invoice #:", ar.InvoiceNumber, ar.InvoiceDate.ToShortDateString(), ar.AmountDue.ToString("C"));
                 }
+
+                emailBody += EmailBodyTableHr;
             }
             else
             {
-                emailBody += string.Format(EmailBodyTableCustomerLine, NoAgedReceivablesFound);
+                emailBody += string.Format(EmailBodyTableCustomerLine, NoAgedReceivablesFound, String.Empty);
             }
 
             emailBody += EmailBodyFooter;

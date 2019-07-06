@@ -15,6 +15,7 @@ namespace JUST.Shared.DatabaseRepository
         private List<Employee> Employees = new List<Employee>();
         private string POQueryString = "Select icpo.buyer, icpo.ponum, icpo.user_1, icpo.user_2, icpo.user_3, icpo.user_4, icpo.user_5, icpo.defaultjobnum, vendor.name as vendorName, icpo.user_6, icpo.defaultworkorder, icpo.attachid from icpo inner join vendor on vendor.vennum = icpo.vennum where icpo.user_3 is not null and icpo.user_5 = 0 order by icpo.ponum asc";
         private string QuotesNeededQueryString = "select dpwoassign.workorder workorder, dpwoassign.ticketnum ticketnum, customer.name customername, dpsite.sitenum sitenum, dpsite.name sitename, dporder.des workorderdescription, dpwoassign.user_17 ticketnote, dpwoassign.user_2 model, dpwoassign.user_3 serialnumber, dpwoassign.user_4 manufacturer, dpwoassign.person servicetech, dpwoassign.date workdate from dpwoassign, dporder, dpsite, customer where dpwoassign.user_15 = 1 and dpwoassign.user_18 = 0 and dpwoassign.ticketnum<> '' and dporder.workorder = dpwoassign.workorder and dpsite.sitenum = dpwoassign.sitenum and customer.cusnum = dpsite.cusnum";
+        private string AgedReceivablesQueryString = "select invoice.cusnum customerNumber, customer.name customerName, invoice.invnum invoiceNumber, invoice.jobnum jobNumber, invoice.sourceid workOrderNumber, invoice.invdate invoiceDate, round((invoice.grossamt + invoice.applied1 + invoice.applied2 + invoice.applied3 + invoice.applied4), 2) amountDue from invoice inner join customer on customer.cusnum = invoice.cusnum where round((invoice.grossamt + invoice.applied1 + invoice.applied2 + invoice.applied3 + invoice.applied4), 2) > 0 order by invoice.cusnum";
 
         public string POQuery
         {
@@ -332,17 +333,60 @@ namespace JUST.Shared.DatabaseRepository
 
         public List<AgedReceivable> GetAgedReceivables()
         {
-            var testList = new List<AgedReceivable>();
-            var ar = new AgedReceivable("Invoice Number", "Customer Name", DateTime.Now, 100.00M);
-            testList.Add(ar);
-            testList.Add(ar);
-            testList.Add(ar);
-            testList.Add(ar);
-            testList.Add(ar);
+            /*            var testList = new List<AgedReceivable>();
+                        var ar = new AgedReceivable("CustomerNumber", "CustomerName", "Invoice Number", DateTime.Now, "jobnum", "workordernum", 100.00M);
+                        testList.Add(ar);
+                        testList.Add(ar);
+                        testList.Add(ar);
+                        testList.Add(ar);
+                        testList.Add(ar);
 
-            return testList;
+                        return testList;
+            */
+            log.Debug("[GetAgedReceivables] enter GetAgedReceivables");
+            if (dbConnection == null)
+            {
+                throw new Exception("GetAgedReceivables - No Database Connection");
+            }
 
-//            return new List<AgedReceivable>();
+            var agedRecevables = new List<AgedReceivable>();
+            log.Debug("[GetAgedReceivables] GetAgedReceivables - 1");
+
+            var cmd = new OdbcCommand(AgedReceivablesQueryString, dbConnection);
+            var reader = cmd.ExecuteReader();
+
+            var customerNumberColumn = reader.GetOrdinal("customerNumber");
+            var customerNameColumn = reader.GetOrdinal("customerName");
+            var invoiceNumberColumn = reader.GetOrdinal("invoiceNumber");
+            var jobNumberColumn = reader.GetOrdinal("jobNumber");
+            var workOrderNumberColumn = reader.GetOrdinal("workOrderNumber");
+            var invoiceDateColumn = reader.GetOrdinal("invoiceDate");
+            var amountDueColumn = reader.GetOrdinal("amountDue");
+            log.Debug("[GetAgedReceivables] GetAgedReceivables - 2");
+
+            while (reader.Read())
+            {
+                var customerNumber = reader.GetString(customerNumberColumn);
+                var customerName = reader.GetString(customerNameColumn);
+                var invoiceNumber = reader.GetString(invoiceNumberColumn);
+                var jobNumber = reader.GetString(jobNumberColumn);
+                var workOrderNumber = reader.GetString(workOrderNumberColumn);
+                var invoiceDate = reader.GetDate(invoiceDateColumn);
+                var amountDue = reader.GetDecimal(amountDueColumn);
+
+                agedRecevables.Add(new AgedReceivable(customerNumber, customerName, invoiceNumber, invoiceDate, jobNumber, workOrderNumber, amountDue));
+            }
+
+            return agedRecevables;
+
+            /*
+select invoice.cusnum, customer.name, invoice.invnum, invoice.jobnum, invoice.sourceid, invoice.invdate, round((invoice.grossamt + invoice.applied1 + invoice.applied2 + invoice.applied3 + invoice.applied4), 2) from invoice inner join customer on customer.cusnum = invoice.cusnum where round((invoice.grossamt + invoice.applied1 + invoice.applied2 + invoice.applied3 + invoice.applied4), 2) > 0 order by invoice.cusnum
+        private string AgedReceivablesQueryString = "select invoice.cusnum customerNumber, customer.name customerName, invoice.invnum invoiceNumber, invoice.jobnum jobNumber, invoice.sourceid workOrderNumber, invoice.invdate invoiceDate, round((invoice.grossamt + invoice.applied1 + invoice.applied2 + invoice.applied3 + invoice.applied4), 2) amountDue from invoice inner join customer on customer.cusnum = invoice.cusnum where round((invoice.grossamt + invoice.applied1 + invoice.applied2 + invoice.applied3 + invoice.applied4), 2) > 0 order by invoice.cusnum";
+             * 
+             * 
+             */
+
+            //            return new List<AgedReceivable>();
         }
-    }
+        }
 }

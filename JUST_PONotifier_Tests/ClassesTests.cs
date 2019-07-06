@@ -385,20 +385,23 @@ namespace JUST.Shared.Tests
             Assert.AreEqual(serialNumber, newObject.SerialNumber);
 
         }
+        #endregion
 
-        #region Quote Needed
+        #region Aged Receivables
         [Test]
         public void Classes_AgedReceivables()
         {
             var newObject = new AgedReceivable();
-            Assert.AreEqual(String.Empty, newObject.InvoiceNumber);
+            Assert.AreEqual(String.Empty, newObject.CustomerNumber);
             Assert.AreEqual(String.Empty, newObject.CustomerName);
-            Assert.AreEqual(0.00M, newObject.AgedAmount);
+            Assert.AreEqual(String.Empty, newObject.InvoiceNumber);
+            Assert.AreEqual(String.Empty, newObject.JobNumber);
+            Assert.AreEqual(String.Empty, newObject.WorkOrderNumber);
+            Assert.AreEqual(0.00M, newObject.AmountDue);
             Assert.AreEqual(DateTime.Now.ToShortDateString(), newObject.InvoiceDate);
         }
         #endregion
 
-        #endregion
         #endregion
     }
 }

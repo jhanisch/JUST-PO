@@ -45,6 +45,16 @@ namespace Just.AgedReceivables
            </tr>
            ";
 
+        private static string EmailBodyHeaderLine = @"
+           <tr style=""opacity: 0.75"">
+              <td></td>
+              <td colspan=""2"" style=""text-align: right; padding: 5px 10px 5px 5px"">Invoice #</td>
+              <td colspan=""2"" style=""text-align: right; padding-left: 10px "">Job/WO #</td>
+              <td colspan=""2"" style=""text-align: right; padding: 5px 10px 5px 5px"">Invoice Date</td>
+              <td colspan=""2"" style=""text-align: right; padding: 5px 10px 5px 5px"">Due Date</td>
+              <td colspan=""2"" style=""text-align: right; padding: 5px 10px 5px 5px"">Amount Due</td>
+           </tr>";
+
         private static string EmailBodyTableHr = @"
            <tr>
               <td colspan=""12""><hr></td>
@@ -60,10 +70,47 @@ namespace Just.AgedReceivables
            <tr>
               <td></td>
               <td colspan=""2"" style=""text-align: right; padding: 5px 10px 5px 5px"">{0}</td>
-              <td colspan=""3"" style=""text-align: left; padding-left: 10px "">{1}</td>
+              <td colspan=""2"" style=""text-align: right; padding-left: 10px "">{1}</td>
               <td colspan=""2"" style=""text-align: right; padding: 5px 10px 5px 5px"">{2}</td>
-              <td colspan=""3"" style=""text-align: right; padding: 5px 10px 5px 5px"">{3}</td>
+              <td colspan=""2"" style=""text-align: right; padding: 5px 10px 5px 5px"">{3}</td>
+              <td colspan=""2"" style=""text-align: right; padding: 5px 10px 5px 5px"">{4}</td>
            </tr>";
+
+        private static string EmailBodyTotalLine = @"
+           <tr>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td colspan=""2"" style=""text-align: right; padding: 5px 10px 5px 5px""><hr></td>
+           </tr>
+           <tr>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td colspan=""2"" style=""text-align: right; padding: 5px 10px 5px 5px"">{0}</td>
+           </tr>";
+
+
+        private static string EmailBodyMemoLine = @"
+           <tr>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td colspan=""9"" style=""color:grey; padding: 0px 0px 10px 5px; opacity: 0.75"">{0}</td>
+           </tr>";
+
 
         private static string EmailBodyFooter = @"</table></body>";
 
@@ -118,32 +165,56 @@ namespace Just.AgedReceivables
             log.Info("[ProcessAgedReceivables] Found " + allOpenInvoices.Count() + " open invoices to process.");
 
             var agedReceivables = from invoice in allOpenInvoices
-                                  where invoice.InvoiceDate < DateTime.Now.AddDays(-60)
-                                  orderby invoice.CustomerName ascending, invoice.InvoiceDate ascending
+                                  where invoice.DueDate < DateTime.Now.AddDays(-60)
+                                  orderby invoice.CustomerName ascending, invoice.CustomerNumber ascending, invoice.InvoiceDate ascending
                                   select invoice;
+
+            var grandTotal = 0.00M;
+            var subTotal = 0.00M;
 
             if (agedReceivables.Count() > 0)
             {
                 log.Info("[ProcessAgedReceivables] Found " + agedReceivables.Count() + " aged invoices >= 60 days old to notify.");
+                emailBody += EmailBodyTableHr + EmailBodyHeaderLine;
 
                 foreach (AgedReceivable ar in agedReceivables)
                 {
                     if (ar.CustomerNumber != lastCustomerNumber)
                     {
+                        if (subTotal > 0)
+                        {
+                            emailBody += String.Format(EmailBodyTotalLine, subTotal.ToString("C"));
+//                            emailBody += string.Format(EmailBodyDetailLine, String.Empty, String.Empty, String.Empty, String.Empty, "-----------------------");
+//                            emailBody += string.Format(EmailBodyDetailLine, String.Empty, String.Empty, String.Empty, String.Empty, subTotal.ToString("C"));
+                        }
+
                         lastCustomerNumber = ar.CustomerNumber;
                         emailBody += EmailBodyTableHr;
                         emailBody += string.Format(EmailBodyTableCustomerLine, ar.CustomerName, "(" + ar.CustomerNumber + ")");
+
+                        subTotal = 0.00M;
                     }
 
-                    emailBody += string.Format(EmailBodyDetailLine, "Invoice #:", ar.InvoiceNumber, ar.InvoiceDate.ToShortDateString(), ar.AmountDue.ToString("C"));
+                    emailBody += string.Format(EmailBodyDetailLine, ar.InvoiceNumber, (ar.JobNumber.Length > 0 ? ar.JobNumber : ar.WorkOrderNumber), ar.InvoiceDate.ToShortDateString(), ar.DueDate.ToShortDateString(), ar.AmountDue.ToString("C"));
+                    if (ar.Memo.Trim().Length > 0)
+                    {
+                        emailBody += string.Format(EmailBodyMemoLine, ar.Memo);
+                    }
+
+                    subTotal += ar.AmountDue;
+                    grandTotal += ar.AmountDue;
                 }
 
                 emailBody += EmailBodyTableHr;
             }
             else
             {
-                emailBody += string.Format(EmailBodyTableCustomerLine, NoAgedReceivablesFound, String.Empty);
+                emailBody += string.Format(EmailBodyTableCustomerLine, NoAgedReceivablesFound, string.Empty);
             }
+
+            //            emailBody += string.Format(EmailBodyDetailLine, String.Empty, String.Empty, String.Empty, String.Empty, "======================");
+            //            emailBody += string.Format(EmailBodyDetailLine, String.Empty, String.Empty, String.Empty, String.Empty, grandTotal.ToString("C"));
+            emailBody += string.Format(EmailBodyTotalLine, grandTotal.ToString("C"));
 
             emailBody += EmailBodyFooter;
             Utils.sendEmail(config, config.MonitorEmailAddresses, emailSubject, emailBody);

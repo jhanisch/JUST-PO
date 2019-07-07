@@ -13,6 +13,8 @@ namespace JUST.Shared.Tests
     {
         public List<Attachment> emptyList;
         private ArrayList ValidModes = new ArrayList(new string[] { "debug", "live", "monitor"});
+        private DateTime dateOne = DateTime.Now.AddDays(-1);
+        private DateTime dateTwo = DateTime.Now.AddDays(-2);
 
         [SetUp]
         public void TestSetup()
@@ -398,8 +400,26 @@ namespace JUST.Shared.Tests
             Assert.AreEqual(String.Empty, newObject.JobNumber);
             Assert.AreEqual(String.Empty, newObject.WorkOrderNumber);
             Assert.AreEqual(0.00M, newObject.AmountDue);
-            Assert.AreEqual(DateTime.Now.ToShortDateString(), newObject.InvoiceDate);
+            Assert.AreEqual(DateTime.Now.ToShortDateString(), newObject.InvoiceDate.ToShortDateString());
+            Assert.AreEqual(String.Empty, newObject.Memo);
         }
+
+        [TestCase("customerNumber", "customerName", "invoiceNumber", "jobNumber", "workOrderNumber", "memo")]
+        public void Classes_AgedReceivables(string customerNumber, string customerName, string invoiceNumber, string jobNumber, string workOrderNumber, string memo)
+        {
+            var newObject = new AgedReceivable(customerNumber, customerName, invoiceNumber, dateOne, dateTwo, jobNumber, workOrderNumber, 100.00M, memo);
+
+            Assert.AreEqual(customerNumber, newObject.CustomerNumber);
+            Assert.AreEqual(customerName, newObject.CustomerName);
+            Assert.AreEqual(invoiceNumber, newObject.InvoiceNumber);
+            Assert.AreEqual(dateOne, newObject.InvoiceDate);
+            Assert.AreEqual(dateTwo, newObject.DueDate);
+            Assert.AreEqual(jobNumber, newObject.JobNumber);
+            Assert.AreEqual(workOrderNumber, newObject.WorkOrderNumber);
+            Assert.AreEqual(100.00M, newObject.AmountDue);
+            Assert.AreEqual(memo, newObject.Memo);
+        }
+
         #endregion
 
         #endregion

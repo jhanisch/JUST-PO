@@ -43,7 +43,7 @@ namespace JUST.Shared.Classes
         public string POAttachmentBasePath { get; private set; }
         public bool ModeRequired { get; private set; } = true;
 
-        private ArrayList parseEmailAddressList(string emailAddressList)
+        protected ArrayList parseEmailAddressList(string emailAddressList)
         {
             ArrayList result = new ArrayList();
 
@@ -384,6 +384,19 @@ namespace JUST.Shared.Classes
         public string WorkOrderNumber { get; set; }
         public decimal AmountDue { get; set; }
         public string Memo { get; set; }
+        public long DaysOverdue
+        {
+            get
+            {
+                if (DueDate == DateTime.MinValue)
+                {
+                    return -1;
+                }
+
+                return Convert.ToInt32((DateTime.Now - DueDate).TotalDays);
+            }
+        }
+        public bool Notified { get; set; }
 
         public AgedReceivable()
         {
@@ -396,6 +409,7 @@ namespace JUST.Shared.Classes
             JobNumber = String.Empty;
             AmountDue = 0.00M;
             Memo = String.Empty;
+            Notified = false;
         }
 
         public AgedReceivable(string customerNumber,
@@ -417,6 +431,7 @@ namespace JUST.Shared.Classes
             WorkOrderNumber = workOrderNumber;
             AmountDue = agedAmount;
             Memo = memo;
+            Notified = false;
         }
     }
 }

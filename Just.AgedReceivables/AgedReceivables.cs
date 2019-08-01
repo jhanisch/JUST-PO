@@ -4,6 +4,7 @@ using JUST.Shared.Utilities;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Data.Odbc;
 using System.Linq;
 using System.Text;
@@ -11,6 +12,75 @@ using System.Threading.Tasks;
 
 namespace Just.AgedReceivables
 {
+    public class NotificationType
+    {
+        public string PreFix { get; set; }
+        public ArrayList NotificationList { get; set; }
+
+        public NotificationType()
+        {
+            PreFix = String.Empty;
+            NotificationList = new ArrayList();
+        }
+
+        public NotificationType(string preFix, ArrayList notificationList)
+        {
+            PreFix = preFix;
+            NotificationList = new ArrayList();
+            if (notificationList.Count > 0)
+            {
+                NotificationList.AddRange(notificationList);
+            }
+        }
+
+    }
+
+    public class AgedReceivablesConfig : Config
+    {
+        public long ThresholdDays;
+        public ArrayList Notifications;
+
+        public AgedReceivablesConfig(bool modeRequired) : base(modeRequired)
+        {
+            ThresholdDays = 60;
+            Notifications = new ArrayList();
+        }
+
+        public void LoadConfiguration(ArrayList validModes, bool modeRequired)
+        {
+            var days = ConfigurationManager.AppSettings["ThresholdDays"];
+            if (days != null && days.Length > 0)
+            {
+                try
+                {
+                    ThresholdDays = Convert.ToInt32(days);
+                }
+                catch
+                {
+                    ThresholdDays = 60;
+                }
+            }
+
+            base.getConfiguration(validModes, modeRequired);
+
+            if (HVACEmailAddresses != null && HVACEmailAddresses.Count > 0)
+            {
+                Notifications.Add(new NotificationType("H", HVACEmailAddresses));
+            }
+
+            if (PlumbingEmailAddresses != null && PlumbingEmailAddresses.Count > 0)
+            {
+                Notifications.Add(new NotificationType("P", PlumbingEmailAddresses));
+            }
+
+            if (MonitorEmailAddresses != null && MonitorEmailAddresses.Count > 0)
+            {
+                Notifications.Add(new NotificationType(String.Empty, MonitorEmailAddresses));
+            }
+
+        }
+    }
+
     public class AgedReceivables
     {
         private const string debug = "debug";
@@ -19,7 +89,7 @@ namespace Just.AgedReceivables
 
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         private static ArrayList ValidModes = new ArrayList() { debug, live, monitor };
-        private static Config config = new Config(false);
+        private static AgedReceivablesConfig config = new AgedReceivablesConfig(false);
         private static string RunDate = DateTime.Now.ToShortDateString();
         private static string NoAgedReceivablesFound = "No Aged Receivables Found\n";
 
@@ -41,7 +111,7 @@ namespace Just.AgedReceivables
               <th style=""width:8.33%""></th>
            </tr>
            <tr>
-              <th colspan=""12"" style=""background-color: cyan; padding: 15px; text-align: left; font-size:24px""><strong>Aged Receivables - {0}</strong><th>
+              <th colspan=""12"" style=""background-color: cyan; padding: 15px; text-align: left; font-size:24px""><strong>Aged Receivables - {0}</strong><span style=""font-size: 14px""><br/>> {1} days old</span><th>
            </tr>
            ";
 
@@ -121,7 +191,8 @@ namespace Just.AgedReceivables
             {
                 log.Info("[AgedReceivables] Starting up at " + DateTime.Now);
 
-                config.getConfiguration(ValidModes, false);
+                //                config.getConfiguration(ValidModes, false);
+                config.LoadConfiguration(ValidModes, false);
 
                 ProcessAgedReceivables();
 
@@ -156,68 +227,75 @@ namespace Just.AgedReceivables
 
             cn = new OdbcConnection(just.ConnectionString);
             cn.Open();
-            log.Info("[ProcessAgedReceivables] Connection to database opened successfully");
             var dbRepository = new DatabaseRepository(cn, log, null);
 
             var allOpenInvoices = dbRepository.GetAgedReceivables();
             var emailSubject = string.Format(EmailSubject, DateTime.Now.ToShortDateString());
-            var emailBody = string.Format(EmailBodyHeader, DateTime.Now.ToShortDateString());
             log.Info("[ProcessAgedReceivables] Found " + allOpenInvoices.Count() + " open invoices to process.");
 
-            var agedReceivables = from invoice in allOpenInvoices
-                                  where invoice.DueDate < DateTime.Now.AddDays(-60)
-                                  orderby invoice.CustomerName ascending, invoice.CustomerNumber ascending, invoice.InvoiceDate ascending
-                                  select invoice;
-
-            var grandTotal = 0.00M;
-            var subTotal = 0.00M;
-
-            if (agedReceivables.Count() > 0)
+            foreach (NotificationType n in config.Notifications)
             {
-                log.Info("[ProcessAgedReceivables] Found " + agedReceivables.Count() + " aged invoices >= 60 days old to notify.");
-                emailBody += EmailBodyTableHr + EmailBodyHeaderLine;
+                var emailBody = string.Format(EmailBodyHeader, DateTime.Now.ToShortDateString(), config.ThresholdDays);
+                log.Info("[ProcessAgedReceivables] " + n.PreFix);
 
-                foreach (AgedReceivable ar in agedReceivables)
+                var agedReceivables = from invoice in allOpenInvoices
+                                      where invoice.DueDate < DateTime.Now.AddDays(-1 * Math.Abs(config.ThresholdDays)) && (n.PreFix.Length > 0 ? invoice.WorkOrderNumber.StartsWith(n.PreFix) : !invoice.Notified)
+                                      orderby invoice.CustomerName ascending, invoice.CustomerNumber ascending, invoice.InvoiceDate ascending
+                                      select invoice;
+
+                var grandTotal = 0.00M;
+                var subTotal = 0.00M;
+
+                if (agedReceivables.Count() > 0)
                 {
-                    if (ar.CustomerNumber != lastCustomerNumber)
+                    log.Info("[ProcessAgedReceivables] Found " + agedReceivables.Count() + " aged invoices >= " + config.ThresholdDays.ToString() + " days old to notify.");
+                    emailBody += EmailBodyTableHr + EmailBodyHeaderLine;
+
+                    foreach (AgedReceivable ar in agedReceivables)
                     {
-                        if (subTotal > 0)
+                        if (ar.CustomerNumber != lastCustomerNumber)
                         {
-                            emailBody += String.Format(EmailBodyTotalLine, subTotal.ToString("C"));
-//                            emailBody += string.Format(EmailBodyDetailLine, String.Empty, String.Empty, String.Empty, String.Empty, "-----------------------");
-//                            emailBody += string.Format(EmailBodyDetailLine, String.Empty, String.Empty, String.Empty, String.Empty, subTotal.ToString("C"));
+                            if (subTotal > 0)
+                            {
+                                emailBody += String.Format(EmailBodyTotalLine, subTotal.ToString("C"));
+                            }
+
+                            lastCustomerNumber = ar.CustomerNumber;
+                            emailBody += EmailBodyTableHr;
+                            emailBody += string.Format(EmailBodyTableCustomerLine, ar.CustomerName, "(" + ar.CustomerNumber + ")");
+
+                            subTotal = 0.00M;
                         }
 
-                        lastCustomerNumber = ar.CustomerNumber;
-                        emailBody += EmailBodyTableHr;
-                        emailBody += string.Format(EmailBodyTableCustomerLine, ar.CustomerName, "(" + ar.CustomerNumber + ")");
+                        emailBody += string.Format(EmailBodyDetailLine, ((ar.DaysOverdue <= (Math.Abs(config.ThresholdDays) + 7)) ? "*" : String.Empty) + ar.InvoiceNumber, (ar.JobNumber.Length > 0 ? ar.JobNumber : ar.WorkOrderNumber), ar.InvoiceDate.ToShortDateString(), ar.DueDate.ToShortDateString(), ar.AmountDue.ToString("C"));
+                        if (ar.Memo.Trim().Length > 0)
+                        {
+                            emailBody += string.Format(EmailBodyMemoLine, ar.Memo);
+                        }
 
-                        subTotal = 0.00M;
+                        subTotal += ar.AmountDue;
+                        grandTotal += ar.AmountDue;
+                        ar.Notified = true;
                     }
 
-                    emailBody += string.Format(EmailBodyDetailLine, ar.InvoiceNumber, (ar.JobNumber.Length > 0 ? ar.JobNumber : ar.WorkOrderNumber), ar.InvoiceDate.ToShortDateString(), ar.DueDate.ToShortDateString(), ar.AmountDue.ToString("C"));
-                    if (ar.Memo.Trim().Length > 0)
+                    // prints the subtotal for the last customer
+                    if (subTotal > 0)
                     {
-                        emailBody += string.Format(EmailBodyMemoLine, ar.Memo);
+                        emailBody += String.Format(EmailBodyTotalLine, subTotal.ToString("C"));
                     }
 
-                    subTotal += ar.AmountDue;
-                    grandTotal += ar.AmountDue;
+                    emailBody += EmailBodyTableHr;
+                }
+                else
+                {
+                    emailBody += string.Format(EmailBodyTableCustomerLine, NoAgedReceivablesFound, string.Empty);
                 }
 
-                emailBody += EmailBodyTableHr;
-            }
-            else
-            {
-                emailBody += string.Format(EmailBodyTableCustomerLine, NoAgedReceivablesFound, string.Empty);
+                emailBody += string.Format(EmailBodyTotalLine, grandTotal.ToString("C"));
+                emailBody += EmailBodyFooter;
+                Utils.sendEmail(config, n.NotificationList, emailSubject, emailBody);
             }
 
-            //            emailBody += string.Format(EmailBodyDetailLine, String.Empty, String.Empty, String.Empty, String.Empty, "======================");
-            //            emailBody += string.Format(EmailBodyDetailLine, String.Empty, String.Empty, String.Empty, String.Empty, grandTotal.ToString("C"));
-            emailBody += string.Format(EmailBodyTotalLine, grandTotal.ToString("C"));
-
-            emailBody += EmailBodyFooter;
-            Utils.sendEmail(config, config.MonitorEmailAddresses, emailSubject, emailBody);
             cn.Close();
 
             return;

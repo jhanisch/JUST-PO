@@ -402,6 +402,7 @@ namespace JUST.Shared.Tests
             Assert.AreEqual(0.00M, newObject.AmountDue);
             Assert.AreEqual(DateTime.Now.ToShortDateString(), newObject.InvoiceDate.ToShortDateString());
             Assert.AreEqual(String.Empty, newObject.Memo);
+            Assert.AreEqual(false, newObject.Notified);
         }
 
         [TestCase("customerNumber", "customerName", "invoiceNumber", "jobNumber", "workOrderNumber", "memo")]
@@ -418,7 +419,18 @@ namespace JUST.Shared.Tests
             Assert.AreEqual(workOrderNumber, newObject.WorkOrderNumber);
             Assert.AreEqual(100.00M, newObject.AmountDue);
             Assert.AreEqual(memo, newObject.Memo);
+            Assert.AreEqual(2, newObject.DaysOverdue);
+            Assert.AreEqual(false, newObject.Notified);
         }
+
+        [TestCase("customerNumber", "customerName", "invoiceNumber", "jobNumber", "workOrderNumber", "memo")]
+        public void Classes_AgedReceivables_MinDate(string customerNumber, string customerName, string invoiceNumber, string jobNumber, string workOrderNumber, string memo)
+        {
+            var newObject = new AgedReceivable(customerNumber, customerName, invoiceNumber, dateOne, DateTime.MinValue, jobNumber, workOrderNumber, 100.00M, memo);
+
+            Assert.AreEqual(-1, newObject.DaysOverdue);
+        }
+
 
         #endregion
 

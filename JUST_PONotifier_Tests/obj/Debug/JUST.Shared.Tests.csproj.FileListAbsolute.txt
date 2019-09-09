@@ -10,6 +10,9 @@ C:\Development\JUST-PO\JUST-PO\JUST_PONotifier_Tests\bin\Debug\nunit.framework.d
 C:\Development\JUST-PO\JUST-PO\JUST_PONotifier_Tests\bin\Debug\System.Runtime.CompilerServices.Unsafe.dll
 C:\Development\JUST-PO\JUST-PO\JUST_PONotifier_Tests\bin\Debug\System.Threading.Tasks.Extensions.dll
 C:\Development\JUST-PO\JUST-PO\JUST_PONotifier_Tests\bin\Debug\log4net.dll
+C:\Development\JUST-PO\JUST-PO\JUST_PONotifier_Tests\bin\Debug\MimeKit.dll
+C:\Development\JUST-PO\JUST-PO\JUST_PONotifier_Tests\bin\Debug\NReco.PdfGenerator.dll
+C:\Development\JUST-PO\JUST-PO\JUST_PONotifier_Tests\bin\Debug\MailKit.dll
 C:\Development\JUST-PO\JUST-PO\JUST_PONotifier_Tests\bin\Debug\JUST.Shared.pdb
 C:\Development\JUST-PO\JUST-PO\JUST_PONotifier_Tests\bin\Debug\JUST.Shared.dll.config
 C:\Development\JUST-PO\JUST-PO\JUST_PONotifier_Tests\bin\Debug\JUST_PONotifier.pdb
@@ -22,6 +25,9 @@ C:\Development\JUST-PO\JUST-PO\JUST_PONotifier_Tests\bin\Debug\nunit.framework.x
 C:\Development\JUST-PO\JUST-PO\JUST_PONotifier_Tests\bin\Debug\System.Runtime.CompilerServices.Unsafe.xml
 C:\Development\JUST-PO\JUST-PO\JUST_PONotifier_Tests\bin\Debug\System.Threading.Tasks.Extensions.xml
 C:\Development\JUST-PO\JUST-PO\JUST_PONotifier_Tests\bin\Debug\log4net.xml
+C:\Development\JUST-PO\JUST-PO\JUST_PONotifier_Tests\bin\Debug\MimeKit.xml
+C:\Development\JUST-PO\JUST-PO\JUST_PONotifier_Tests\bin\Debug\NReco.PdfGenerator.xml
+C:\Development\JUST-PO\JUST-PO\JUST_PONotifier_Tests\bin\Debug\MailKit.xml
 C:\Development\JUST-PO\JUST-PO\JUST_PONotifier_Tests\obj\Debug\JUST.Shared.Tests.csprojResolveAssemblyReference.cache
 C:\Development\JUST-PO\JUST-PO\JUST_PONotifier_Tests\obj\Debug\JUST.Shared.Tests.csproj.CoreCompileInputs.cache
 C:\Development\JUST-PO\JUST-PO\JUST_PONotifier_Tests\obj\Debug\JUST_PONotifier_Tests.dll

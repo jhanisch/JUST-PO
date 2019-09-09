@@ -5,8 +5,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Mail;
+using NReco;
+using MailKit;
 using System.Text;
 using System.Threading.Tasks;
+using MimeKit;
+using MailKit.Security;
 
 namespace JUST.Shared.Utilities
 {
@@ -97,5 +101,62 @@ namespace JUST.Shared.Utilities
 
             return result;
         }
+
+        public static bool sendEmail2(Config config, ArrayList toEmailAddresses, string subject, string emailBody, Boolean attachAsPdf = false, string attachFilenamePrefix = "")
+        {
+            bool result = true;
+            if (toEmailAddresses.Count == 0)
+            {
+                return false;
+            }
+
+            try
+            {
+                var message = new MimeMessage();
+                message.From.Add(new MailboxAddress("Notifications", config.FromEmailAddress));
+                foreach (string emailAddress in toEmailAddresses)
+                {
+                    message.To.Add(new MailboxAddress(emailAddress, emailAddress));
+                }
+                message.Subject = subject;
+
+                var builder = new BodyBuilder();
+                builder.HtmlBody = emailBody;
+
+                if (attachAsPdf)
+                {
+
+                    var outputPath = AppDomain.CurrentDomain.BaseDirectory + "DataFiles\\";
+                    System.IO.Directory.CreateDirectory(outputPath);
+                    var outputFile = outputPath + attachFilenamePrefix + "_" + DateTime.Now.ToString("yyyyMMddHHmmssfff") + ".pdf";
+
+                    var htmlToPdf = new NReco.PdfGenerator.HtmlToPdfConverter();
+                    htmlToPdf.GeneratePdf(emailBody, null, outputFile);
+
+                    // Render any HTML fragment or document to HTML
+                    builder.Attachments.Add(outputFile);
+                }
+
+                message.Body = builder.ToMessageBody();
+
+                using (MailKit.Net.Smtp.SmtpClient smtp = new MailKit.Net.Smtp.SmtpClient())
+                {
+                    smtp.Connect(config.FromEmailSMTP, config.FromEmailPort.Value, SecureSocketOptions.StartTls);
+                    smtp.AuthenticationMechanisms.Remove("XOAUTH");
+                    smtp.Authenticate(config.FromEmailAddress, config.FromEmailPassword);
+                    smtp.Send(message);
+                    smtp.Disconnect(true);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                result = false;
+                log.Debug("[SendEmail2] - " + ex.Message);
+            }
+
+            return result;
+        }
+
     }
 }

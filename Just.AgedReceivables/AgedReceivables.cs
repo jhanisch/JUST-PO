@@ -121,7 +121,8 @@ namespace Just.AgedReceivables
               <td colspan=""2"" style=""text-align: right; padding: 5px 10px 5px 5px"">Invoice #</td>
               <td colspan=""2"" style=""text-align: right; padding-left: 10px "">Job/WO #</td>
               <td colspan=""2"" style=""text-align: right; padding: 5px 10px 5px 5px"">Invoice Date</td>
-              <td colspan=""2"" style=""text-align: right; padding: 5px 10px 5px 5px"">Due Date (Days Overdue)</td>
+              <td colspan=""2"" style=""text-align: right; padding: 5px 10px 5px 5px"">Due Date</td>
+              <td colspan=""1"" style=""text-align: right; padding: 5px 10px 5px 5px"">Days Overdue</td>
               <td colspan=""2"" style=""text-align: right; padding: 5px 10px 5px 5px"">Amount Due</td>
            </tr>";
 
@@ -142,8 +143,9 @@ namespace Just.AgedReceivables
               <td colspan=""2"" style=""text-align: right; padding: 5px 10px 5px 5px"">{0}</td>
               <td colspan=""2"" style=""text-align: right; padding-left: 10px "">{1}</td>
               <td colspan=""2"" style=""text-align: right; padding: 5px 10px 5px 5px"">{2}</td>
-              <td colspan=""2"" style=""text-align: right; padding: 5px 10px 5px 5px"">{3} <span style=""color:grey; opacity: 0.75"">({5})</span></td>
-              <td colspan=""2"" style=""text-align: right; padding: 5px 10px 5px 5px"">{4}</td>
+              <td colspan=""2"" style=""text-align: right; padding: 5px 10px 5px 5px"">{3}</td>
+              <td colspan=""1"" style=""text-align: right; padding: 5px 10px 5px 5px"">{4}</td>
+              <td colspan=""2"" style=""text-align: right; padding: 5px 10px 5px 5px"">{5}</td>
            </tr>";
 
         private static string EmailBodyTotalLine = @"
@@ -157,9 +159,11 @@ namespace Just.AgedReceivables
               <td></td>
               <td></td>
               <td></td>
+              <td></td>
               <td colspan=""2"" style=""text-align: right; padding: 5px 10px 5px 5px""><hr></td>
            </tr>
            <tr>
+              <td></td>
               <td></td>
               <td></td>
               <td></td>
@@ -267,7 +271,7 @@ namespace Just.AgedReceivables
                             subTotal = 0.00M;
                         }
 
-                        emailBody += string.Format(EmailBodyDetailLine, ((ar.DaysOverdue <= (Math.Abs(config.ThresholdDays) + 7)) ? "*" : String.Empty) + ar.InvoiceNumber, (ar.JobNumber.Length > 0 ? ar.JobNumber : ar.WorkOrderNumber), ar.InvoiceDate.ToShortDateString(), ar.DueDate.ToShortDateString(), ar.AmountDue.ToString("C"), ar.DaysOverdue.ToString());
+                        emailBody += string.Format(EmailBodyDetailLine, ((ar.DaysOverdue <= (Math.Abs(config.ThresholdDays) + 7)) ? "*" : String.Empty) + ar.InvoiceNumber, (ar.JobNumber.Length > 0 ? ar.JobNumber : ar.WorkOrderNumber), ar.InvoiceDate.ToShortDateString(), ar.DueDate.ToShortDateString(), ar.DaysOverdue.ToString(), ar.AmountDue.ToString("C"));
                         if (ar.Memo.Trim().Length > 0)
                         {
                             emailBody += string.Format(EmailBodyMemoLine, ar.Memo);
@@ -293,7 +297,7 @@ namespace Just.AgedReceivables
 
                 emailBody += string.Format(EmailBodyTotalLine, grandTotal.ToString("C"));
                 emailBody += EmailBodyFooter;
-                Utils.sendEmail(config, n.NotificationList, emailSubject, emailBody);
+                Utils.sendEmail2(config, n.NotificationList, emailSubject, emailBody, true, "AgedReceivables");
             }
 
             cn.Close();

@@ -297,7 +297,8 @@ namespace Just.AgedReceivables
 
                 emailBody += string.Format(EmailBodyTotalLine, grandTotal.ToString("C"));
                 emailBody += EmailBodyFooter;
-                Utils.sendEmail2(config, n.NotificationList, emailSubject, emailBody, true, "AgedReceivables");
+                var attachments = new List<string>() { Utils.createPdf(emailBody, "AgedReceivables") };
+                Utils.sendEmail2(config, n.NotificationList, emailSubject, emailBody, attachments);
             }
 
             cn.Close();

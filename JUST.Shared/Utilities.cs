@@ -61,8 +61,20 @@ namespace JUST.Shared.Utilities
     }
 
     public static class Utils
-    {
+    { 
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
+        public static string createPdf(string HTML, string attachFilenamePrefix)
+        {
+            var outputPath = AppDomain.CurrentDomain.BaseDirectory + "DataFiles\\";
+            System.IO.Directory.CreateDirectory(outputPath);
+            var outputFile = outputPath + attachFilenamePrefix + "_" + DateTime.Now.ToString("yyyyMMddHHmmssfff") + ".pdf";
+
+            var htmlToPdf = new NReco.PdfGenerator.HtmlToPdfConverter();
+            htmlToPdf.GeneratePdf(HTML, null, outputFile);
+
+            return outputFile;
+        }
 
         public static bool sendEmail(Config config, ArrayList toEmailAddresses, string subject, string emailBody)
         {
@@ -102,7 +114,7 @@ namespace JUST.Shared.Utilities
             return result;
         }
 
-        public static bool sendEmail2(Config config, ArrayList toEmailAddresses, string subject, string emailBody, Boolean attachAsPdf = false, string attachFilenamePrefix = "")
+        public static bool sendEmail2(Config config, ArrayList toEmailAddresses, string subject, string emailBody, List<string> attachments)
         {
             bool result = true;
             if (toEmailAddresses.Count == 0)
@@ -123,9 +135,8 @@ namespace JUST.Shared.Utilities
                 var builder = new BodyBuilder();
                 builder.HtmlBody = emailBody;
 
-                if (attachAsPdf)
+/*                if (attachAsPdf)
                 {
-
                     var outputPath = AppDomain.CurrentDomain.BaseDirectory + "DataFiles\\";
                     System.IO.Directory.CreateDirectory(outputPath);
                     var outputFile = outputPath + attachFilenamePrefix + "_" + DateTime.Now.ToString("yyyyMMddHHmmssfff") + ".pdf";
@@ -135,6 +146,10 @@ namespace JUST.Shared.Utilities
 
                     // Render any HTML fragment or document to HTML
                     builder.Attachments.Add(outputFile);
+                }*/
+                foreach(string attachment in attachments)
+                {
+                    builder.Attachments.Add(attachment);
                 }
 
                 message.Body = builder.ToMessageBody();
